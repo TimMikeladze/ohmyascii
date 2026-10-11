@@ -839,7 +839,7 @@ export function colorizeModel(model: SceneModel, paint: Record<number, number>):
 
 // ---------- import / export ----------
 
-function normalizeTris(raw: number[]): Float32Array {
+function normalizeTris(raw: ArrayLike<number>): Float32Array {
   let lo = [Infinity, Infinity, Infinity]
   let hi = [-Infinity, -Infinity, -Infinity]
   for (let i = 0; i < raw.length; i += 3) {
@@ -984,6 +984,11 @@ export function serializeScene(scene: MeshScene, lite = false): SerializedScene 
   }
 }
 
+// Untrusted scenes (share links, pieces, AI) are capped so one can't stall a rebuild.
+export const MAX_PRIMS = 256
+export const MAX_DABS = 20_000
+export const MAX_PAINT = 400_000
+const clampVec = (v: Vec3, m: number): Vec3 => [Math.min(m, Math.max(-m, v[0])), Math.min(m, Math.max(-m, v[1])), Math.min(m, Math.max(-m, v[2]))]
 const isVec = (v: unknown): v is Vec3 => Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === 'number' && Number.isFinite(n))
 
 /** Validates and revives a serialized scene. Unknown or malformed entries are dropped. */
@@ -993,12 +998,16 @@ export function parseScene(data: unknown): MeshScene | null {
   if (!Array.isArray(d.prims)) return null
   const types = new Set<string>(['sphere', 'box', 'cylinder', 'torus', 'cone', 'mesh'])
   const meshes: Record<string, ImportedMesh> = {}
-  for (const [id, m] of Object.entries(d.meshes ?? {})) {
+  for (const [id, m] of Object.entries(d.meshes ?? {}).slice(0, MAX_PRIMS)) {
     try {
-      if (m && typeof m.tris === 'string') meshes[id] = { name: String(m.name ?? 'mesh'), tris: base64ToF32(m.tris) }
+      if (!m || typeof m.tris !== 'string') continue
+      const raw = base64ToF32(m.tris)
+      // Untrusted triangles: whole triangles only, finite, within the import cap, unit-sized.
+      if (raw.length % 9 || raw.length / 9 > MAX_IMPORT_TRIS || !raw.every(Number.isFinite)) continue
+      meshes[id] = { name: String(m.name ?? 'mesh').slice(0, 120), tris: normalizeTris(raw) }
     } catch {}
   }
-  const prims = d.prims.filter(
+  const prims = d.prims.slice(0, MAX_PRIMS).filter(
     (p): p is Prim =>
       !!p &&
       types.has(p.type) &&
@@ -1006,11 +1015,11 @@ export function parseScene(data: unknown): MeshScene | null {
       isVec(p.rot) &&
       isVec(p.scale) &&
       (p.type !== 'mesh' || (!!p.meshId && p.meshId in meshes)),
-  ).map((p) => ({ ...p, id: typeof p.id === 'string' ? p.id : newId(), op: p.op === 'subtract' ? 'subtract' : 'add', color: typeof p.color === 'string' ? p.color : '#e4e4e4' }) as Prim)
-  const dabs = (Array.isArray(d.dabs) ? d.dabs : []).filter(
-    (x): x is Dab => !!x && isVec(x.p) && typeof x.r === 'number' && x.r > 0,
-  ).map((x) => ({ p: x.p, r: x.r, op: x.op === 'subtract' ? 'subtract' : 'add', color: typeof x.color === 'string' ? x.color : '#e4e4e4' }) as Dab)
+  ).map((p) => ({ ...p, pos: clampVec(p.pos, 20), scale: clampVec(p.scale, 10), id: typeof p.id === 'string' ? p.id : newId(), op: p.op === 'subtract' ? 'subtract' : 'add', color: typeof p.color === 'string' ? p.color : '#e4e4e4' }) as Prim)
+  const dabs = (Array.isArray(d.dabs) ? d.dabs : []).slice(0, MAX_DABS).filter(
+    (x): x is Dab => !!x && isVec(x.p) && typeof x.r === 'number' && x.r > 0 && x.r <= 2,
+  ).map((x) => ({ p: clampVec(x.p, 20), r: x.r, op: x.op === 'subtract' ? 'subtract' : 'add', color: typeof x.color === 'string' ? x.color : '#e4e4e4' }) as Dab)
   const paint: Record<number, number> = {}
-  for (const [k, v] of Object.entries(d.paint ?? {})) if (typeof v === 'number') paint[+k] = v
-  return { prims, dabs, paint, blend: typeof d.blend === 'number' ? Math.max(0, d.blend) : 0.08, meshes }
+  for (const [k, v] of Object.entries(d.paint ?? {}).slice(0, MAX_PAINT)) if (typeof v === 'number' && Number.isFinite(+k)) paint[+k] = v
+  return { prims, dabs, paint, blend: typeof d.blend === 'number' && Number.isFinite(d.blend) ? Math.min(0.5, Math.max(0, d.blend)) : 0.08, meshes }
 }

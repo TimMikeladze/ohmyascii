@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_PRIMS,
   buildSceneModel,
   sceneChanges,
   dabChanges,
@@ -267,5 +268,19 @@ describe('updateSceneModel', () => {
     const withDabs = buildSceneModel({ ...base, dabs }, 128)
     const undone = updateSceneModel(withDabs, base, sceneChanges({ ...base, dabs }, base)!)
     expect(Array.from({ length: undone.count }).some((_, i) => undone.col[i * 3 + 1] === 255 && undone.col[i * 3] === 0)).toBe(false)
+  })
+})
+
+describe('untrusted scenes', () => {
+  it('caps counts, clamps blend and transforms, drops non-finite mesh data', () => {
+    const prim = { type: 'sphere', pos: [1e9, 0, 0], rot: [0, 0, 0], scale: [1e6, 1, 1] }
+    const nan = btoa(String.fromCharCode(...new Uint8Array(new Float32Array(9).fill(NaN).buffer)))
+    const s = parseScene({ prims: Array.from({ length: 1000 }, () => prim), dabs: [{ p: [0, 0, 0], r: 50 }], blend: 1e6, meshes: { m: { tris: nan } } })!
+    expect(s.prims.length).toBe(MAX_PRIMS)
+    expect(s.prims[0].pos[0]).toBe(20)
+    expect(s.prims[0].scale[0]).toBe(10)
+    expect(s.dabs).toEqual([])
+    expect(s.blend).toBe(0.5)
+    expect(s.meshes).toEqual({})
   })
 })

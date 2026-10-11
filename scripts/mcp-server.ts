@@ -1,14 +1,14 @@
-import { dirname } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { StudioFiles, galleryList, galleryPiece, renderPieceText, studioGuide, validatePiece } from '../lib/mcp/studio'
+import { StudioFiles, galleryList, galleryPiece, studioGuide, validatePiece } from '../lib/mcp/studio'
 
 // ohmyascii-studio MCP server (stdio). Lets Claude Code compose, validate, preview and save pieces in
-// the folder the studio holds. Root: OHMYASCII_STUDIO_DIR, else the working directory.
+// the folder the studio holds. Root: OHMYASCII_STUDIO_DIR, else the working directory. Pieces may
+// load http(s) images only with OHMYASCII_ALLOW_REMOTE_IMAGES=1.
 // Registered for this repo in .mcp.json; see docs/local-claude.md.
 
-const files = new StudioFiles(process.env.OHMYASCII_STUDIO_DIR || process.cwd())
+const files = new StudioFiles(process.env.OHMYASCII_STUDIO_DIR || process.cwd(), { allowRemoteImages: process.env.OHMYASCII_ALLOW_REMOTE_IMAGES === '1' })
 const server = new McpServer({ name: 'ohmyascii-studio', version: '0.1.0' })
 
 const text = (t: string) => ({ content: [{ type: 'text' as const, text: t }] })
@@ -59,7 +59,7 @@ server.registerTool(
   'render_piece',
   {
     title: 'Render a piece to text',
-    description: 'Headless ASCII render of any piece (world, modelled scene, image, text, preset) at chosen times — preview composition, density and motion without the browser. Pass `piece` JSON or a `path` in the studio folder.',
+    description: 'Headless ASCII render of any piece (world, modelled scene, image, text, preset) at chosen times — preview composition, density and motion without the browser. Pass `piece` JSON or a `path` (*.ascii.json) in the studio folder. Image paths must stay inside the folder.',
     inputSchema: { piece: z.string().optional(), path: z.string().optional(), ...frameOpts },
     annotations: { readOnlyHint: true },
   },
@@ -67,7 +67,7 @@ server.registerTool(
     run(() => {
       const json = piece ?? (path ? files.readPiece(path).text : null)
       if (!json) throw new Error('Pass `piece` (JSON) or `path`')
-      return renderPieceText(json, { ...opts, baseDir: path ? dirname(files.resolve(path)) : files.root })
+      return files.renderPiece(json, { ...opts, path })
     }),
 )
 
@@ -91,16 +91,16 @@ server.registerTool(
   'write_piece',
   {
     title: 'Write a piece',
-    description: 'Validate, normalise and save a piece in the studio folder (path must end with .ascii.json). The studio renders it live; returns warnings and a headless preview frame.',
+    description: 'Validate, normalise and save a piece in the studio folder (path must end with .ascii.json; overwrites an existing file). The studio renders it live; returns warnings and a headless preview frame.',
     inputSchema: { path: z.string(), piece: z.string().describe('Piece JSON text') },
-    annotations: { destructiveHint: false, idempotentHint: true },
+    annotations: { destructiveHint: true, idempotentHint: true },
   },
   async ({ path, piece }) =>
     run(async () => {
       const { written, report } = files.writePiece(path, piece)
       let preview = ''
       try {
-        preview = `\n\nPreview:\n${await renderPieceText(written, { times: [1], cols: 80, rows: 32, baseDir: dirname(files.resolve(path)) })}`
+        preview = `\n\nPreview:\n${await files.renderPiece(written, { times: [1], cols: 80, rows: 32, path })}`
       } catch {}
       return `Saved ${path}.${report.warnings.length ? `\nWarnings:\n- ${report.warnings.join('\n- ')}` : ''}${preview}`
     }),

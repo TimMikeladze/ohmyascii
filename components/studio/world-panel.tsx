@@ -2,9 +2,9 @@
 
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Copy, Eye, EyeOff, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Trash2, X } from 'lucide-react'
 import { FONT_OPTIONS, type FontKey } from '@/lib/ascii/config'
-import { newId, type Vec3 } from '@/lib/ascii/scene'
+import { newId, serializeScene, type Vec3 } from '@/lib/ascii/scene'
 import {
   BEHAVIOUR_TYPES,
   CURVE_TYPES,
@@ -20,6 +20,10 @@ import {
   makeObject,
   objectLabel,
   parseBehaviour,
+  parseField,
+  parseObject,
+  parseWorld,
+  serializeWorld,
   type ArraySpec,
   type Axis,
   type Behaviour,
@@ -28,16 +32,16 @@ import {
   type FieldType,
   type Geom,
   type GeomKind,
+  type Keyframe,
   type World,
   type WObject,
 } from '@/lib/ascii/world'
 import { WORLD_PRESETS } from '@/lib/ascii/worlds'
 import { cn } from '@/lib/utils'
-import { ColorField, Segmented, SelectField, SliderField, TextField, ToggleField } from './controls'
+import { ColorField, Disclosure, JsonEditor, Segmented, SelectField, SliderField, SwatchRow, TextField, ToggleField, VecField } from './controls'
 
 const BUTTON =
   'h-8 border border-border px-2 text-[11px] tracking-widest uppercase transition-colors hover:border-foreground hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50'
-const AXES = ['X', 'Y', 'Z'] as const
 const AXIS_OPTS: { value: Axis; label: string }[] = [
   { value: 'x', label: 'X' },
   { value: 'y', label: 'Y' },
@@ -79,35 +83,14 @@ function Group({ title, children, action }: { title: string; children: ReactNode
   )
 }
 
-function VecSliders({ label, value, min, max, step, def, format, onChange }: { label: string; value: Vec3; min: number; max: number; step: number; def: number; format?: (v: number) => string; onChange: (v: Vec3) => void }) {
-  return (
-    <>
-      {AXES.map((a, i) => (
-        <SliderField
-          key={a}
-          label={`${label} ${a}`}
-          value={value[i]}
-          min={min}
-          max={max}
-          step={step}
-          defaultValue={def}
-          format={format}
-          onChange={(v) => {
-            const next = [...value] as Vec3
-            next[i] = v
-            onChange(next)
-          }}
-        />
-      ))}
-    </>
-  )
+function VecSliders({ label, value, min, max, step, def, onChange }: { label: string; value: Vec3; min: number; max: number; step: number; def: number; format?: (v: number) => string; onChange: (v: Vec3) => void }) {
+  return <VecField label={label} value={value} min={min} max={max} step={step} defaultValue={def} onChange={onChange} />
 }
 
 // ---------- behaviours ----------
 
 function BehaviourEditor({ b, onChange }: { b: Behaviour; onChange: (b: Behaviour) => void }) {
   const set = (patch: Record<string, unknown>) => onChange({ ...b, ...patch } as Behaviour)
-  const [keysDraft, setKeysDraft] = useState<string | null>(null)
   switch (b.type) {
     case 'spin':
       return (
@@ -156,20 +139,7 @@ function BehaviourEditor({ b, onChange }: { b: Behaviour; onChange: (b: Behaviou
         <>
           <SliderField label="Loop (s)" value={b.loop} min={0} max={60} step={0.1} onChange={(loop) => set({ loop })} />
           <Segmented label="Easing" value={b.ease} options={[{ value: 'smooth', label: 'Smooth' }, { value: 'linear', label: 'Linear' }]} onChange={(ease) => set({ ease })} />
-          <div className="flex flex-col gap-1.5">
-            <TextField
-              label="Keys — [{ t, pos?, rot?, scale? }] offsets"
-              multiline
-              value={keysDraft ?? JSON.stringify(b.keys)}
-              onChange={(text) => {
-                setKeysDraft(text)
-                try {
-                  const parsed = parseBehaviour({ type: 'keys', loop: b.loop, ease: b.ease, keys: JSON.parse(text) })
-                  if (parsed) onChange(parsed)
-                } catch {}
-              }}
-            />
-          </div>
+          <KeyframeEditor keys={b.keys} onChange={(keys) => set({ keys })} />
         </>
       )
     case 'wave':
@@ -191,11 +161,80 @@ function BehaviourEditor({ b, onChange }: { b: Behaviour; onChange: (b: Behaviou
   }
 }
 
+const KEY_CHANNELS = [
+  { key: 'pos', label: 'Move' },
+  { key: 'rot', label: 'Turn' },
+  { key: 'scale', label: 'Scale' },
+] as const
+
+/** Keyframes: time + optional move / turn / scale offsets. A channel left off a key is skipped there. */
+function KeyframeEditor({ keys, onChange }: { keys: Keyframe[]; onChange: (keys: Keyframe[]) => void }) {
+  const setKey = (i: number, k: Keyframe) => onChange(keys.map((x, j) => (j === i ? k : x)).sort((a, c) => a.t - c.t))
+  return (
+    <div className="flex flex-col gap-2">
+      {keys.map((k, i) => (
+        <div key={i} className="flex flex-col gap-3 border border-dashed border-border p-2">
+          <div className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-1.5 text-muted-foreground">
+              At
+              <input
+                type="number"
+                aria-label={`Key ${i + 1} time (s)`}
+                value={k.t}
+                min={0}
+                step={0.1}
+                onChange={(e) => Number.isFinite(e.target.valueAsNumber) && setKey(i, { ...k, t: Math.max(0, e.target.valueAsNumber) })}
+                className="h-7 w-16 border border-border bg-background px-1.5 text-right tabular-nums text-foreground"
+              />
+              s
+            </label>
+            <div className="ml-auto flex gap-1">
+              {KEY_CHANNELS.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  aria-pressed={k[c.key] !== undefined}
+                  title={`${k[c.key] !== undefined ? 'Remove' : 'Add'} ${c.label.toLowerCase()} on this key`}
+                  onClick={() => {
+                    const next: Keyframe = { ...k }
+                    if (k[c.key] !== undefined) delete next[c.key]
+                    else if (c.key === 'scale') next.scale = 1
+                    else next[c.key] = [0, 0, 0]
+                    setKey(i, next)
+                  }}
+                  className={cn('h-6 border px-1.5 text-[10px] tracking-widest uppercase', k[c.key] !== undefined ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground')}
+                >
+                  {c.label}
+                </button>
+              ))}
+              <button type="button" aria-label={`Remove key ${i + 1}`} className="px-1 text-muted-foreground hover:text-foreground" onClick={() => onChange(keys.filter((_, j) => j !== i))}>
+                <X className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+          {k.pos && <VecField label="Move" value={k.pos} min={-5} max={5} step={0.01} defaultValue={0} onChange={(pos) => setKey(i, { ...k, pos })} />}
+          {k.rot && <VecField label="Turn (°)" value={k.rot} min={-720} max={720} step={1} defaultValue={0} onChange={(rot) => setKey(i, { ...k, rot })} />}
+          {k.scale !== undefined && <SliderField label="Scale" value={k.scale} min={0} max={4} step={0.01} defaultValue={1} onChange={(scale) => setKey(i, { ...k, scale })} />}
+        </div>
+      ))}
+      <button
+        type="button"
+        className={BUTTON}
+        onClick={() => {
+          const last = keys[keys.length - 1]
+          onChange([...keys, { t: last ? +(last.t + 1).toFixed(2) : 0, pos: last?.pos ? [...last.pos] : [0, 0, 0] }])
+        }}
+      >
+        + Key
+      </button>
+    </div>
+  )
+}
+
 function BehaviourList({ anim, onChange, label = 'Animation' }: { anim: Behaviour[]; onChange: (anim: Behaviour[]) => void; label?: string }) {
   return (
-    <Group
-      title={label}
-      action={
+    <Disclosure title={label} meta={anim.length ? anim.map((b) => BEHAVIOUR_LABELS[b.type].split(' ')[0]).join(' · ') : 'still'}>
+      <div className="flex justify-end">
         <select
           aria-label="Add animation"
           value=""
@@ -209,8 +248,7 @@ function BehaviourList({ anim, onChange, label = 'Animation' }: { anim: Behaviou
             </option>
           ))}
         </select>
-      }
-    >
+      </div>
       {anim.length === 0 && <p className="text-[11px] text-muted-foreground">Still. Add spin, orbit, bob, pulse, sway, drift, keyframes or a deformer.</p>}
       {anim.map((b, i) => (
         <div key={i} className="flex flex-col gap-3 border-l border-dashed border-foreground/40 pl-3">
@@ -223,13 +261,13 @@ function BehaviourList({ anim, onChange, label = 'Animation' }: { anim: Behaviou
           <BehaviourEditor b={b} onChange={(next) => onChange(anim.map((x, j) => (j === i ? next : x)))} />
         </div>
       ))}
-    </Group>
+    </Disclosure>
   )
 }
 
 // ---------- geometry ----------
 
-function GeomEditor({ geom, onChange, onImage }: { geom: Geom; onChange: (g: Geom) => void; onImage: (cb: (url: string) => void) => void }) {
+function GeomEditor({ geom, onChange, onImage, onEditSculpt }: { geom: Geom; onChange: (g: Geom) => void; onImage: (cb: (url: string) => void) => void; onEditSculpt?: () => void }) {
   const set = (patch: Record<string, unknown>) => onChange({ ...geom, ...patch } as Geom)
   switch (geom.kind) {
     case 'shape':
@@ -238,8 +276,8 @@ function GeomEditor({ geom, onChange, onImage }: { geom: Geom; onChange: (g: Geo
       return (
         <>
           <SelectField label="2D shape" value={geom.type} options={opts(FLAT_TYPES)} onChange={(type) => set({ type })} />
-          {(geom.type === 'polygon' || geom.type === 'star') && <SliderField label={geom.type === 'star' ? 'Points' : 'Sides'} value={geom.sides} min={3} max={24} step={1} onChange={(sides) => set({ sides })} />}
-          {['ring', 'star', 'moon', 'petal', 'cross'].includes(geom.type) && <SliderField label={geom.type === 'petal' ? 'Width' : geom.type === 'moon' ? 'Crescent' : 'Inner'} value={geom.inner} min={0.05} max={0.95} step={0.01} onChange={(inner) => set({ inner })} />}
+          {(geom.type === 'polygon' || geom.type === 'star') && <SliderField label={geom.type === 'star' ? 'Points' : 'Sides'} value={geom.sides} min={3} max={64} step={1} onChange={(sides) => set({ sides })} />}
+          {['ring', 'star', 'moon', 'petal', 'cross'].includes(geom.type) && <SliderField label={geom.type === 'petal' ? 'Width' : geom.type === 'moon' ? 'Crescent' : 'Inner'} value={geom.inner} min={0.05} max={0.99} step={0.01} onChange={(inner) => set({ inner })} />}
           <SliderField label="Rounding" value={geom.round} min={0} max={0.4} step={0.005} defaultValue={0} onChange={(round) => set({ round })} />
           <SliderField label="Bevel (pillow)" value={geom.bevel} min={0} max={0.5} step={0.005} defaultValue={0.12} onChange={(bevel) => set({ bevel })} />
           <SliderField label="Thickness" value={geom.depth} min={0} max={1} step={0.01} defaultValue={0} format={(v) => (v === 0 ? 'sheet' : v.toFixed(2))} onChange={(depth) => set({ depth })} />
@@ -285,7 +323,7 @@ function GeomEditor({ geom, onChange, onImage }: { geom: Geom; onChange: (g: Geo
         <>
           <SelectField label="Terrain" value={geom.type} options={opts(TERRAIN_TYPES)} onChange={(type) => set({ type })} />
           <SliderField label="Height" value={geom.amp} min={0} max={1} step={0.005} onChange={(amp) => set({ amp })} />
-          <SliderField label="Detail" value={geom.freq} min={0.2} max={20} step={0.1} onChange={(freq) => set({ freq })} />
+          <SliderField label="Detail" value={geom.freq} min={0.2} max={40} step={0.1} onChange={(freq) => set({ freq })} />
           <SliderField label="Flow speed" value={geom.speed} min={-5} max={5} step={0.05} defaultValue={0} onChange={(speed) => set({ speed })} />
           <SliderField label="Seed" value={geom.seed} min={0} max={99} step={1} onChange={(seed) => set({ seed })} />
         </>
@@ -301,10 +339,16 @@ function GeomEditor({ geom, onChange, onImage }: { geom: Geom; onChange: (g: Geo
       )
     case 'sculpt':
       return (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Modelled object — {geom.scene.prims.length} shapes, {geom.scene.dabs.length} sculpt dabs. Build one in the modeller (Source → Model,
-          sculpt &amp; paint), then come back and use “Add modelled object”.
-        </p>
+        <>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Modelled object — {geom.scene.prims.length} shapes, {geom.scene.dabs.length} sculpt dabs.
+          </p>
+          {onEditSculpt && (
+            <button type="button" className={BUTTON} onClick={onEditSculpt}>
+              Edit in the modeller
+            </button>
+          )}
+        </>
       )
   }
 }
@@ -338,9 +382,28 @@ export interface WorldPanelProps {
   onAddModelled: () => void
   onImportFile: (file: File) => void
   onExportJson: () => void
+  /** Open a modelled object's scene in the modeller; saving there writes it back to the object. */
+  onEditSculpt: (id: string) => void
 }
 
-export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, onSelect, onAddModelled, onImportFile, onExportJson }: WorldPanelProps) {
+/** One object / field as plain JSON (ids are kept by the panel, not edited). */
+const objectJson = (o: WObject) => {
+  const { id: _id, ...rest } = serializeWorld({ duration: 1, fit: 1, camera: { rot: [0, 0, 0], zoom: 1, fov: 0, pan: [0, 0], anim: [] }, fields: [], objects: [o] }).objects[0]
+  return rest
+}
+const fieldJson = ({ id: _id, ...rest }: Field) => rest
+
+/**
+ * Live JSON edits re-parse modelled objects into new scene objects; keep the old one when its
+ * content is unchanged so its geometry (cached by identity) isn't rebuilt on every keystroke.
+ */
+function keepScene(next: WObject, prev: WObject | undefined): WObject {
+  if (next.geom.kind !== 'sculpt' || prev?.geom.kind !== 'sculpt') return next
+  const same = JSON.stringify(serializeScene(next.geom.scene)) === JSON.stringify(serializeScene(prev.geom.scene))
+  return same ? { ...next, geom: prev.geom } : next
+}
+
+export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, onSelect, onAddModelled, onImportFile, onExportJson, onEditSculpt }: WorldPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
   const imageCb = useRef<((url: string) => void) | null>(null)
@@ -353,6 +416,19 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
     obj && onWorld((w) => ({ ...w, objects: w.objects.map((o) => (o.id === obj.id ? { ...o, ...patch } : o)) }), coalesce)
   const updateField = (patch: Partial<Field>) => field && onWorld((w) => ({ ...w, fields: w.fields.map((f) => (f.id === field.id ? { ...f, ...patch } : f)) }))
   const setCam = (patch: Partial<World['camera']>) => onWorld((w) => ({ ...w, camera: { ...w.camera, ...patch } }))
+  const stepPreset = (dir: number) => {
+    const i = WORLD_PRESETS.findIndex((p) => p.key === activePreset)
+    const next = WORLD_PRESETS[(i + dir + WORLD_PRESETS.length) % WORLD_PRESETS.length]
+    onPreset(i < 0 && dir < 0 ? WORLD_PRESETS[WORLD_PRESETS.length - 1].key : next.key)
+  }
+  const addImage = () => {
+    imageCb.current = (url) => {
+      const o = makeObject('image', { geom: { ...(defaultGeom('image') as Extract<Geom, { kind: 'image' }>), url }, scale: [1.4, 1.4, 1.4], source: true })
+      onWorld((w) => ({ ...w, objects: [...w.objects, o] }), false)
+      onSelect(o.id)
+    }
+    imageRef.current?.click()
+  }
   const add = (kind: GeomKind) => {
     const o = makeObject(kind, kind === 'text' ? { scale: [1.4, 1.4, 1.4] } : {})
     onWorld((w) => ({ ...w, objects: [...w.objects, o] }), false)
@@ -362,55 +438,62 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted-foreground">Gallery</span>
-        <div className="grid grid-cols-2 gap-1.5">
-          {WORLD_PRESETS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              title={p.blurb}
-              aria-pressed={activePreset === p.key}
-              onClick={() => onPreset(p.key)}
-              className={cn(
-                'h-8 truncate border px-2 text-left text-[11px] tracking-wide uppercase transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2',
-                activePreset === p.key ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground',
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+        <label htmlFor="world-gallery" className="text-xs text-muted-foreground">
+          Start from the gallery ({WORLD_PRESETS.length})
+        </label>
+        <div className="flex gap-1.5">
+          <button type="button" aria-label="Previous gallery scene" className={cn(BUTTON, 'h-9 px-2')} onClick={() => stepPreset(-1)}>
+            <ChevronLeft className="size-3.5" aria-hidden />
+          </button>
+          <select
+            id="world-gallery"
+            value={activePreset ?? ''}
+            onChange={(e) => e.target.value && onPreset(e.target.value)}
+            className="h-9 min-w-0 flex-1 border border-border bg-background px-2 text-xs text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-dashed focus-visible:outline-offset-2"
+          >
+            {!activePreset && <option value="">{world.name ? `${world.name} (edited)` : 'Your scene'}</option>}
+            {WORLD_PRESETS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <button type="button" aria-label="Next gallery scene" className={cn(BUTTON, 'h-9 px-2')} onClick={() => stepPreset(1)}>
+            <ChevronRight className="size-3.5" aria-hidden />
+          </button>
         </div>
         {activePreset && <p className="text-[11px] leading-relaxed text-muted-foreground">{WORLD_PRESETS.find((p) => p.key === activePreset)?.blurb}</p>}
       </div>
+      <TextField label="Scene name" mono={false} value={world.name ?? ''} placeholder="Untitled scene" onChange={(name) => onWorld((w) => ({ ...w, name: name.slice(0, 80) || undefined }))} />
 
       {/* ---- objects ---- */}
-      <Group title={`Objects (${world.objects.length})`}>
-        <div className="flex flex-wrap gap-1.5">
-          {ADD_KINDS.map((k) => (
-            <button key={k.kind} type="button" className={cn(BUTTON, 'h-7 px-2.5')} onClick={() => add(k.kind)}>
-              + {k.label}
-            </button>
-          ))}
-          <button type="button" className={cn(BUTTON, 'h-7 px-2.5')} onClick={onAddModelled}>
-            + Modelled object
-          </button>
-          <button
-            type="button"
-            className={cn(BUTTON, 'h-7 px-2.5')}
-            onClick={() => {
-              imageCb.current = (url) => {
-                const o = makeObject('image', { geom: { ...(defaultGeom('image') as Extract<Geom, { kind: 'image' }>), url }, scale: [1.4, 1.4, 1.4], source: true })
-                onWorld((w) => ({ ...w, objects: [...w.objects, o] }), false)
-                onSelect(o.id)
-              }
-              imageRef.current?.click()
+      <Group
+        title={`Objects (${world.objects.length})`}
+        action={
+          <select
+            aria-label="Add object"
+            value=""
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === 'image') addImage()
+              else if (v === 'sculpt') onAddModelled()
+              else if (v) add(v as GeomKind)
             }}
+            className="h-7 border border-border bg-background px-1 text-[11px] tracking-wide text-foreground normal-case"
           >
-            + Image
-          </button>
-        </div>
+            <option value="">+ Add…</option>
+            {ADD_KINDS.map((k) => (
+              <option key={k.kind} value={k.kind}>
+                {k.label}
+              </option>
+            ))}
+            <option value="image">Image…</option>
+            <option value="sculpt">From the modeller</option>
+          </select>
+        }
+      >
         {world.objects.length > 0 && (
-          <ul aria-label="Objects" className="flex flex-col border border-border">
+          <ul aria-label="Objects" className="flex max-h-56 flex-col overflow-y-auto border border-border">
             {world.objects.map((o, i) => (
               <li key={o.id} className="flex items-stretch border-b border-dashed border-border last:border-b-0">
                 <button
@@ -457,7 +540,7 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
             ))}
           </ul>
         )}
-        <p className="text-[11px] leading-relaxed text-muted-foreground">Click an object on the canvas to select it.</p>
+        {!obj && world.objects.length > 0 && <p className="text-[11px] leading-relaxed text-muted-foreground">Click an object here or on the canvas to edit it.</p>}
       </Group>
 
       {obj && (
@@ -470,13 +553,14 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
               imageCb.current = cb
               imageRef.current?.click()
             }}
+            onEditSculpt={() => onEditSculpt(obj.id)}
           />
 
-          <Group title="Transform">
+          <Disclosure title="Transform" defaultOpen>
             <VecSliders label="Position" value={obj.pos} min={-4} max={4} step={0.01} def={0} onChange={(pos) => updateObj({ pos })} />
-            <VecSliders label="Rotate" value={obj.rot} min={-180} max={180} step={1} def={0} format={deg} onChange={(rot) => updateObj({ rot })} />
+            <VecSliders label="Rotation (°)" value={obj.rot} min={-180} max={180} step={1} def={0} onChange={(rot) => updateObj({ rot })} />
             <SliderField
-              label="Size (uniform)"
+              label="Size"
               value={Math.max(...obj.scale.map(Math.abs))}
               min={0.01}
               max={8}
@@ -486,31 +570,47 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
                 updateObj({ scale: obj.scale.map((s) => +((s / m) * v).toFixed(4)) as Vec3 })
               }}
             />
-            <VecSliders label="Scale" value={obj.scale} min={0.01} max={8} step={0.01} def={1} onChange={(scale) => updateObj({ scale })} />
-          </Group>
+            <VecSliders label="Stretch" value={obj.scale} min={0.01} max={8} step={0.01} def={1} onChange={(scale) => updateObj({ scale })} />
+          </Disclosure>
 
-          <Group title="Material">
-            <ColorField label="Lit color" value={obj.color} onChange={(color) => updateObj({ color })} />
-            <ToggleField label="Custom shadow color" value={obj.shadow !== undefined} onChange={(on) => updateObj({ shadow: on ? '#1a1a1a' : undefined })} />
-            {obj.shadow !== undefined && <ColorField label="Shadow color" value={obj.shadow} onChange={(shadow) => updateObj({ shadow })} />}
+          <Disclosure title="Material" defaultOpen>
+            <SwatchRow
+              items={[
+                { label: 'Lit', value: obj.color, onChange: (color) => updateObj({ color }) },
+                ...(obj.shadow !== undefined ? [{ label: 'Shadow', value: obj.shadow, onChange: (shadow: string) => updateObj({ shadow }) }] : []),
+              ]}
+              action={
+                <button type="button" className="text-[11px] tracking-widest text-muted-foreground uppercase hover:text-foreground" onClick={() => updateObj({ shadow: obj.shadow === undefined ? '#1a1a1a' : undefined })}>
+                  {obj.shadow === undefined ? '+ Shadow colour' : 'Auto shadow'}
+                </button>
+              }
+            />
             <TextField label="Characters (dark → light, blank = scene default)" value={obj.charset ?? ''} placeholder="scene default" onChange={(charset) => updateObj({ charset: charset || undefined })} />
             <SliderField label="Self-lit" value={obj.emissive} min={0} max={1} step={0.01} defaultValue={0} format={(v) => `${Math.round(v * 100)}%`} onChange={(emissive) => updateObj({ emissive })} />
             <ToggleField label="Use painted / image colors" value={!!obj.source} onChange={(source) => updateObj({ source: source || undefined })} />
-            <ToggleField label="Color by height (shadow → lit, bottom → top)" value={obj.tint === 'height'} onChange={(on) => updateObj({ tint: on ? 'height' : undefined })} />
-          </Group>
+            <ToggleField label="Colour by height (shadow → lit, bottom → top)" value={obj.tint === 'height'} onChange={(on) => updateObj({ tint: on ? 'height' : undefined })} />
+          </Disclosure>
 
           <BehaviourList anim={obj.anim} onChange={(anim) => updateObj({ anim }, false)} />
 
-          <Group
-            title="Array (copies)"
-            action={
-              <button type="button" className="text-[11px] tracking-widest uppercase hover:text-foreground" onClick={() => updateObj({ array: obj.array ? undefined : { count: 6, offset: [0.6, 0, 0], step: [0, 0, 0], rot: [0, 60, 0], grow: 1, spin: 0, phase: 0 } }, false)}>
-                {obj.array ? 'Remove' : '+ Add'}
-              </button>
-            }
-          >
-            {obj.array ? <ArrayEditor array={obj.array} onChange={(array) => updateObj({ array })} /> : <p className="text-[11px] text-muted-foreground">Repeat this object in rings, rows, spirals or staggered waves.</p>}
-          </Group>
+          <Disclosure title="Array (copies)" meta={obj.array ? `×${obj.array.count}` : 'off'}>
+            <ToggleField
+              label="Repeat in rings, rows, spirals or waves"
+              value={!!obj.array}
+              onChange={(on) => updateObj({ array: on ? { count: 6, offset: [0.6, 0, 0], step: [0, 0, 0], rot: [0, 60, 0], grow: 1, spin: 0, phase: 0 } : undefined }, false)}
+            />
+            {obj.array && <ArrayEditor array={obj.array} onChange={(array) => updateObj({ array })} />}
+          </Disclosure>
+
+          <Disclosure title="JSON">
+            <JsonEditor
+              key={obj.id}
+              label="This object — every setting, as stored"
+              value={objectJson(obj)}
+              parse={(d) => parseObject(d && typeof d === 'object' ? { ...d, id: obj.id } : d)}
+              onApply={(next) => onWorld((w) => ({ ...w, objects: w.objects.map((o) => (o.id === obj.id ? keepScene(next, o) : o)) }))}
+            />
+          </Disclosure>
         </div>
       )}
 
@@ -567,7 +667,7 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
             <SelectField label="Pattern" value={field.type} options={opts(FIELD_TYPES)} onChange={(type) => updateField({ type })} />
             <Segmented label="Layer" value={field.layer} options={[{ value: 'back', label: 'Behind' }, { value: 'front', label: 'In front' }]} onChange={(layer) => updateField({ layer })} />
             <TextField label="Characters (low → high)" value={field.charset} onChange={(charset) => charset && updateField({ charset })} />
-            <ToggleField label="Random glyphs (matrix, stars)" value={!!field.random} onChange={(random) => updateField({ random: random || undefined })} />
+            <ToggleField label="Random glyphs (matrix, stars)" value={!!field.random} onChange={(random) => updateField({ random })} />
             {field.colors.map((c, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="flex-1">
@@ -590,15 +690,23 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
             <SliderField label="Intensity" value={field.intensity} min={0} max={1.5} step={0.01} defaultValue={1} onChange={(intensity) => updateField({ intensity })} />
             <SliderField label={field.type === 'grid' ? 'Horizon' : 'Angle'} value={field.angle} min={-180} max={180} step={1} defaultValue={90} format={deg} onChange={(angle) => updateField({ angle })} />
             <SliderField label="Seed" value={field.seed} min={0} max={99} step={1} defaultValue={1} onChange={(seed) => updateField({ seed })} />
+            <Disclosure title="JSON">
+              <JsonEditor
+                key={field.id}
+                label="This layer — every setting, as stored"
+                rows={8}
+                value={fieldJson(field)}
+                parse={(d) => parseField(d && typeof d === 'object' ? { ...d, id: field.id } : d)}
+                onApply={(next) => onWorld((w) => ({ ...w, fields: w.fields.map((f) => (f.id === field.id ? next : f)) }))}
+              />
+            </Disclosure>
           </div>
         )}
       </Group>
 
       {/* ---- camera ---- */}
-      <Group title="Camera & loop">
-        <SliderField label="Tilt" value={world.camera.rot[0]} min={-90} max={90} step={1} defaultValue={-18} format={deg} onChange={(v) => setCam({ rot: [v, world.camera.rot[1], world.camera.rot[2]] })} />
-        <SliderField label="Turn" value={world.camera.rot[1]} min={-180} max={180} step={1} defaultValue={0} format={deg} onChange={(v) => setCam({ rot: [world.camera.rot[0], v, world.camera.rot[2]] })} />
-        <SliderField label="Roll" value={world.camera.rot[2]} min={-180} max={180} step={1} defaultValue={0} format={deg} onChange={(v) => setCam({ rot: [world.camera.rot[0], world.camera.rot[1], v] })} />
+      <Disclosure title="Camera & loop" meta={`${world.duration}s loop`}>
+        <VecField label="Tilt · turn · roll (°)" value={world.camera.rot} min={-180} max={180} step={1} onChange={(rot) => setCam({ rot })} />
         <SliderField label="Perspective" value={world.camera.fov} min={0} max={0.95} step={0.01} defaultValue={0.25} format={(v) => (v === 0 ? 'flat (2D)' : v.toFixed(2))} onChange={(fov) => setCam({ fov })} />
         <SliderField label="Zoom" value={world.camera.zoom} min={0.2} max={4} step={0.01} defaultValue={1} onChange={(zoom) => setCam({ zoom })} />
         <SliderField label="Pan X" value={world.camera.pan[0]} min={-2} max={2} step={0.01} defaultValue={0} onChange={(v) => setCam({ pan: [v, world.camera.pan[1]] })} />
@@ -606,7 +714,14 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
         <SliderField label="View size" value={world.fit} min={0.2} max={8} step={0.01} defaultValue={1.4} onChange={(fit) => onWorld((w) => ({ ...w, fit }))} />
         <SliderField label="Loop length (s)" value={world.duration} min={1} max={60} step={0.5} defaultValue={12} onChange={(duration) => onWorld((w) => ({ ...w, duration }))} />
         <BehaviourList label="Camera motion" anim={world.camera.anim} onChange={(anim) => setCam({ anim })} />
-      </Group>
+        <JsonEditor
+          label="Camera JSON"
+          rows={8}
+          value={world.camera}
+          parse={(d) => (d && typeof d === 'object' ? parseWorld({ camera: d })!.camera : null)}
+          onApply={(camera) => onWorld((w) => ({ ...w, camera }))}
+        />
+      </Disclosure>
 
       <input
         ref={fileRef}
@@ -634,28 +749,36 @@ export function WorldPanel({ world, onWorld, onPreset, activePreset, selected, o
           e.target.value = ''
         }}
       />
-      <div className="grid grid-cols-3 gap-2">
-        <button type="button" className={BUTTON} onClick={() => fileRef.current?.click()}>
-          Import
-        </button>
-        <button type="button" className={BUTTON} onClick={onExportJson}>
-          Export
-        </button>
-        <button
-          type="button"
-          className={BUTTON}
-          onClick={() => {
-            onWorld(() => emptyWorld(), false)
-            onSelect(null)
-          }}
-        >
-          Empty
-        </button>
-      </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        A world is many animated objects over generative backgrounds. Set perspective to 0 for flat 2D scenes. Uploaded images stay in
-        this browser; export the world JSON to keep everything.
-      </p>
+      <Disclosure title="Files & reset">
+        <div className="grid grid-cols-3 gap-1.5">
+          <button type="button" className={BUTTON} onClick={() => fileRef.current?.click()}>
+            Import
+          </button>
+          <button type="button" className={BUTTON} onClick={onExportJson}>
+            Export
+          </button>
+          <button
+            type="button"
+            className={BUTTON}
+            onClick={() => {
+              onWorld(() => emptyWorld(), false)
+              onSelect(null)
+            }}
+          >
+            Empty
+          </button>
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">Uploaded images stay in this browser; Export keeps everything. Perspective 0 makes a flat 2D scene.</p>
+      </Disclosure>
+      <Disclosure title="Scene JSON">
+        <JsonEditor
+          label="The whole scene — objects, layers, camera, loop"
+          rows={16}
+          value={serializeWorld(world)}
+          parse={(d) => (d && typeof d === 'object' && Array.isArray((d as { objects?: unknown }).objects) ? parseWorld(d) : null)}
+          onApply={(next) => onWorld((w) => ({ ...next, objects: next.objects.map((o) => keepScene(o, w.objects.find((x) => x.id === o.id))) }))}
+        />
+      </Disclosure>
     </>
   )
 }

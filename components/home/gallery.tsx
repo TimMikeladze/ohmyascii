@@ -6,7 +6,7 @@ import { OhMyAscii } from '@/components/ohmyascii'
 import { LOOKS, mergeConfig, type AsciiConfig } from '@/lib/ascii/config'
 import { getSourcePresets } from '@/lib/ascii/presets'
 import type { SourceSpec } from '@/lib/ascii/source'
-import { encodeShare } from '@/components/studio/share'
+import { shareFragment } from '@/components/studio/share'
 import { WORLD_PRESETS } from '@/lib/ascii/worlds'
 import type { SourceState } from '@/components/studio/types'
 
@@ -66,14 +66,14 @@ const MARK_CARDS: CardSpec[] = getSourcePresets().map((p) => {
   const t = tuned[p.key] ?? { config: {}, blurb: p.label }
   const cfg = mergeConfig(t.config)
   const source: SourceState = { kind: 'preset', key: p.key }
-  return { href: `/studio#s=${encodeShare(cfg, source)}`, label: p.label, blurb: t.blurb, source: { kind: 'url', url: p.url, name: `${p.key}.svg` }, config: t.config }
+  return { href: `/studio#${shareFragment(cfg, source)}`, label: p.label, blurb: t.blurb, source: { kind: 'url', url: p.url, name: `${p.key}.svg` }, config: t.config }
 })
 
 const TYPE_CARDS: CardSpec[] = [
   (() => {
     const text = { text: 'ASCII', fontKey: 'jetbrains' as const, weight: 800 }
     return {
-      href: `/studio#s=${encodeShare(mergeConfig(look('ink')), { kind: 'text', ...text })}`,
+      href: `/studio#${shareFragment(mergeConfig(look('ink')), { kind: 'text', ...text })}`,
       label: 'Type · ASCII',
       blurb: 'Any word, any mono typeface, extruded — light mode included.',
       source: { kind: 'text', ...text },
@@ -83,7 +83,7 @@ const TYPE_CARDS: CardSpec[] = [
   (() => {
     const text = { text: '404', fontKey: 'space' as const, weight: 700 }
     return {
-      href: `/studio#s=${encodeShare(mergeConfig(look('amber')), { kind: 'text', ...text })}`,
+      href: `/studio#${shareFragment(mergeConfig(look('amber')), { kind: 'text', ...text })}`,
       label: 'Type · 404',
       blurb: 'A big amber 404 — the other thing monospace was made for.',
       source: { kind: 'text', ...text },

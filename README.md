@@ -6,7 +6,7 @@ Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint you
 
 ```bash
 pnpm install
-pnpm dev            # pass -p <port> if 3000 is taken
+pnpm dev            # binds 127.0.0.1; pass -p <port> if 3000 is taken (pnpm dev:lan to reach it from other devices)
 pnpm test           # vitest: modelling, worlds (animation, geometry, fields, renderer), AI reply parsing
 ```
 
@@ -14,12 +14,12 @@ pnpm test           # vitest: modelling, worlds (animation, geometry, fields, re
 
 - **`/`** — a chat-first landing. The composer is a launcher: describe a scene and the studio opens with the AI art director already building it; keep chatting there to refine it ("make it snow").
 - **Gallery** — under the home composer, 36 tuned scenes, the 7 built-in marks and type examples each render as a live card; clicking one opens the studio on it.
-- **`/studio`** — the full studio (everything below), where the AI chat lives. Deep links: `/studio?q=<prompt>` starts a fresh AI scene, `/studio#w=<preset key>` (e.g. `#w=orrery`) opens a gallery creation, `/studio#s=…` share links restore config + source + world.
+- **`/studio`** — the full studio (everything below), where the AI chat lives. The side panel starts with four tabs — **Image · Text · Model · Scene** — and shows only that mode's controls; Look, Light, Motion and Effects follow, with rarely used settings under each section's collapsed *More* group. Deep links: `/studio?q=<prompt>` starts a fresh AI scene, `/studio#w=<preset key>` (e.g. `#w=orrery`) opens a gallery creation, `/studio#z=…` share links (compressed; older `#s=…` links still open) restore config + source + world. A link is applied on top of your saved session — one ⌘Z goes back — and then removed from the address bar, so reloading keeps your latest work.
 
 AI scene generation (optional) has two engines:
 
-- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `OHMYASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site.
-- **AI Gateway** — set `AI_GATEWAY_API_KEY`, or run `vercel env pull .env.local` in a linked project to get an OIDC token. `OHMYASCII_AI_MODEL` overrides the model (default `anthropic/claude-sonnet-5.5`).
+- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `OHMYASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site, and refused for non-loopback clients (`pnpm dev` binds 127.0.0.1).
+- **AI Gateway** — set `AI_GATEWAY_API_KEY`, or run `vercel env pull .env.local` in a linked project to get an OIDC token. `OHMYASCII_AI_MODEL` overrides the model (default `anthropic/claude-sonnet-5.5`). `/api/generate` validates requests, rejects cross-site browsers, caps prompt size and rate-limits each IP (`OHMYASCII_AI_RATE_LIMIT`, default 20 per 10 minutes per server instance). On a public deployment also add a Vercel Firewall rate-limit rule and an AI Gateway budget.
 
 ## Install with the shadcn CLI
 
@@ -53,11 +53,11 @@ import { OhMyAscii } from '@/components/ohmyascii'
 
 ## Model, sculpt & paint
 
-Source → **Model, sculpt & paint in 3D** switches the canvas to a scene you build yourself.
+The **Model** tab switches the canvas to a scene you build yourself.
 
 - **Shapes** — add sphere / box / cylinder / torus / cone, then move, rotate, scale and colour the selected one. Shapes melt into one surface (**Blend between shapes**); set a shape to **Cut away** to carve it out of the others.
 - **Canvas tools** — `o` orbit · `v` select (click a shape) · `b` paint · `g` clay (build up) · `e` carve. `[` / `]` resize the brush, alt-drag orbits while a brush is active, `d` / `⌫` duplicate / delete the selected shape. Each stroke is one undo step.
-- **Paint** shows in Color → Image mode (switched on automatically when you pick the brush).
+- **Paint** shows in Look → Colour → Image (switched on automatically when you pick the brush).
 - **Import** OBJ or STL (up to 250k triangles); it becomes a shape you can transform and paint. Scene JSON files load back in the same way.
 - **Export** — Scene JSON (everything, including paint and imported meshes) and a PLY point cloud for Blender / MeshLab. Share links carry shapes and sculpting; paint and imported meshes stay local.
 
@@ -75,14 +75,15 @@ How it works: every shape and sculpt dab is a signed distance function; the scen
 
 ## Compose worlds — whole animated 2D / 3D scenes
 
-Source → **Compose a 2D / 3D scene** switches to a *world*: many objects, each with its own geometry, colours, glyphs and animation, over generative backgrounds, seen through an animated camera.
+The **Scene** tab switches to a *world*: many objects, each with its own geometry, colours, glyphs and animation, over generative backgrounds, seen through an animated camera.
 
-- **Gallery** — 36 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave, Lighthouse storm, Black hole, Firefly grove, Winter village, Earthrise, Balloon dawn, Glyph rain, Volcano, Ringed giant, Atom, Lava lamp, Desert night, Snow summit, Torus knot, Heartbeat, Eclipse, Windmill, Crystal cave, Coral reef, Tornado, Jack-o’-lantern, Liftoff, Close encounter.
+- **Gallery** — pick from the dropdown (or step with ‹ ›) — 36 tuned scenes to start from: Orrery, Ocean sunset, Koi pond (2D), Aurora peaks, Galaxy, Double helix, Campfire, Warp tunnel, Zen garden, Neon rain, Lotus mandala (2D), Jellyfish, Synthwave, Lighthouse storm, Black hole, Firefly grove, Winter village, Earthrise, Balloon dawn, Glyph rain, Volcano, Ringed giant, Atom, Lava lamp, Desert night, Snow summit, Torus knot, Heartbeat, Eclipse, Windmill, Crystal cave, Coral reef, Tornado, Jack-o’-lantern, Liftoff, Close encounter.
 - **Objects** — solids, 2D shapes (circle, ring, star, polygon, heart, moon, petal…, with pillow bevels), text, images, tubes along curves (helix, knot, lissajous, spiral), terrain (hills, mountains, dunes, a live ocean), particles (stars, snow, rain, fireflies, embers, galaxy, planetary ring, dust) and anything built in the modeller (**+ Modelled object**).
 - **Material** — lit and shadow colour, per-object glyph ramp, self-lit amount, colour by height (sunsets, flames).
 - **Animation** — spin, orbit, bob, pulse, sway, drift, keyframes, plus wave / twist deformers; stack as many as you like. **Arrays** repeat an object in rings, rows and spirals with staggered timing (`phase`) and random heights (`jitter`).
 - **Backgrounds** — gradient, plasma, noise, waves, ripples, glyph rain, fire, aurora, tunnel, vortex, stars, metaballs, rings, retro grid; behind objects or in front of them.
 - **Camera** — tilt / turn / roll, perspective (0 = flat 2D), zoom, pan and its own animation. Drag orbits, click an object to select it, `d` / `⌫` duplicate / delete. Video export records exactly one loop.
+- **Everything is editable in the studio.** Each object, background layer and the camera has its controls plus a **JSON** box with every stored setting. Edits there are validated and applied as one undo step (⌘Enter). **Scene JSON** edits the whole world, **Settings JSON** (under Export) edits the look, and the Model tab has a JSON box for shapes and sculpt dabs. Keyframes have a real editor: time, then move / turn / scale per key. A modelled object opens in the modeller with **Edit in the modeller**; **Save to scene** writes it back, and your own modeller scene is restored.
 - Worlds save to the session, share links (local images excepted), folder pieces and **Export** (`*.world.json`).
 
 ```tsx
@@ -95,7 +96,7 @@ import world from './sunset.world.json'
 
 ### Generate with AI
 
-The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. The home page's chat speaks the same protocol with the same engines. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ohmyascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
+The **Generate with AI** section is a chat with an art director: describe a scene ("a lighthouse on a cliff in a storm") and it streams back a world and look, applied as one undo step. Follow-ups ("make it snow", "add a second moon") edit the scene on screen. Every applied reply has a **Restore** button that puts the scene back to that turn, so the chat doubles as a version history. If the engine fails (credentials, rate limit, a reply cut off at the length limit) the chat says why. The home page's chat speaks the same protocol with the same engines. Pick **Claude Code (local)** or **AI Gateway** at the top of the section. **Copy for Claude Code in your terminal** copies a handoff prompt instead ("Use the ohmyascii-studio skill…" + the open piece or the scene JSON + your request) for an agent that edits piece files while the studio renders them — the robocn pattern, see `docs/local-claude.md`. `app/api/generate/route.ts` streams from the AI Gateway; `lib/ascii/world-prompt.ts` holds the instructions and the tolerant reply parser. Details: `docs/worlds.md`.
 
 ## Build with an agent (folder mode)
 
@@ -123,18 +124,19 @@ pnpm cli                                     # browse the gallery: ↑/↓ + ent
 pnpm terminal:link                           # puts `ohmyascii` on your PATH
 ohmyascii ./logo.ascii.json --watch          # any piece file; reloads on save
 ohmyascii 'http://localhost:3000/studio#s=…' # studio → Terminal copies this command
-ohmyascii bake koi --seconds 8 > koi.sh      # self-playing script (or --format json | ans)
+ohmyascii bake koi --seconds 8 > koi.sh      # self-playing script (or --format cast | json | ans)
 ```
 
 Embed with `openTerminalPiece(openPiece(input), { cols, rows })` from `packages/terminal` (`ohmyascii`); `frame(t)` returns ANSI lines. See `docs/terminal.md` or `ohmyascii guide`.
 
 ## Studio extras
 
-- **Share link** (Export → Share link, or `s`) encodes the config and preset/text source in the URL hash. Uploaded files aren't included.
+- **Share link** (Export → Share link, or `s`) encodes the config, source and any scene / world (compressed) in the URL hash. Uploaded files, paint and imported meshes aren't included; links from outside are size-checked and clamped, so a crafted link can't freeze the tab.
 - **Copy text** (Export → Copy text, or `t`) copies the current frame as plain-text ASCII. `OhMyAsciiHandle.getText()` exposes the same for your own code.
 - **Video** (Export → Video) records a 5-second WebM of the canvas (worlds: exactly one loop, up to 30 s).
 - **Paste** an image or image URL anywhere, or drag an image in from another tab, to convert it.
-- **Shortcuts** (modeller keys above): `space` pause · `r` replay · `u` upload · `x` randomize look · `c` copy code · `s` share · `t` copy text · `f` fullscreen · `⌘Z`/`⇧⌘Z` undo/redo · `?` help.
+- **Shortcuts** (modeller keys above): `space` pause · `r` replay · `u` upload · `x` randomize look · `c` copy code · `s` share · `t` copy text · `f` fullscreen · `⌘Z`/`⇧⌘Z` undo/redo (also restores which mode you were in) · `?` help.
+- **X / Y / Z rows** (position, rotation, stretch, spin): type a value, or drag the axis letter sideways to scrub (shift = fine); double-click a letter to reset it.
 - **Copy PNG** puts the current frame on the clipboard. Downloads are named after the source (`logo.svg` → `logo-ascii.png`).
 - **Sliders:** double-click to reset to default, click the number to type a value; a dot marks changed values.
-- **Session** is saved to `localStorage` and restored on reload (a share link in the URL wins).
+- **Session** is saved to `localStorage` and restored on reload; if browser storage is full the studio says so once (export JSON to keep big scenes).

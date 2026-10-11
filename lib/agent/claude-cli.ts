@@ -90,17 +90,23 @@ export function streamClaude({ instructions, prompt, model, signal, session }: C
   if (session && !isSessionId(session.id)) throw new Error('Invalid session id')
   const args = claudeArgs({ instructions, model, session })
   const enc = new TextEncoder()
+  let kill = () => {}
   return new ReadableStream<Uint8Array>({
     start(controller) {
       const child = spawn('claude', args, { cwd: tmpdir(), stdio: ['pipe', 'pipe', 'pipe'] })
+      kill = () => child.kill('SIGTERM')
       let buf = ''
       let stderr = ''
       let finished = false
       const finish = (error?: string) => {
         if (finished) return
         finished = true
-        if (error) controller.enqueue(enc.encode(`\n⚠ ${error}`))
-        controller.close()
+        try {
+          if (error) controller.enqueue(enc.encode(`\n⚠ ${error}`))
+          controller.close()
+        } catch {
+          // The consumer already cancelled.
+        }
       }
       const onAbort = () => {
         child.kill('SIGTERM')
@@ -114,7 +120,14 @@ export function streamClaude({ instructions, prompt, model, signal, session }: C
           const ev = parseClaudeLine(buf.slice(0, i))
           buf = buf.slice(i + 1)
           if (!ev || finished) continue
-          if ('text' in ev) controller.enqueue(enc.encode(ev.text))
+          if ('text' in ev) {
+            try {
+              controller.enqueue(enc.encode(ev.text))
+            } catch {
+              finished = true
+              child.kill('SIGTERM')
+            }
+          }
           else if ('error' in ev) finish(ev.error)
           else finish()
         }
@@ -125,7 +138,13 @@ export function streamClaude({ instructions, prompt, model, signal, session }: C
         signal?.removeEventListener('abort', onAbort)
         finish(code ? stderr.trim().split('\n').pop() || `claude exited with code ${code}` : undefined)
       })
+      // claude may exit before reading a large prompt (not logged in, bad --resume): EPIPE is
+      // reported through `close` with its stderr, not as an uncaught exception.
+      child.stdin.on('error', () => undefined)
       child.stdin.end(prompt)
+    },
+    cancel() {
+      kill()
     },
   })
 }

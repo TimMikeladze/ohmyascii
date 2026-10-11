@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mergeConfig } from './config'
 import type { Piece } from './piece'
-import { cellsToAnsi, createTerminalRenderer, detectColorDepth, parseColor } from './terminal'
+import { cellsToAnsi, createTerminalRenderer, detectColorDepth, frameDiff, parseColor, toAsciicast, truncateAnsi } from './terminal'
 import { getWorldPreset } from './worlds'
 
 const koi = (): Piece => {
@@ -49,8 +49,33 @@ describe('terminal renderer', () => {
     expect(cellsToAnsi(cells, 3, 1, '256')).toEqual(['\x1b[38;5;196mab \x1b[0m'])
   })
 
-  it('honours NO_COLOR', () => {
+  it('detects colour depth from the environment', () => {
     expect(detectColorDepth({ NO_COLOR: '1', COLORTERM: 'truecolor' })).toBe('none')
     expect(detectColorDepth({ COLORTERM: 'truecolor' })).toBe('truecolor')
+    expect(detectColorDepth({ TERM: 'dumb', COLORTERM: 'truecolor' })).toBe('none')
+    expect(detectColorDepth({ FORCE_COLOR: '0', COLORTERM: 'truecolor' })).toBe('none')
+    expect(detectColorDepth({ FORCE_COLOR: '3', NO_COLOR: '1' })).toBe('truecolor')
+    expect(detectColorDepth({ FORCE_COLOR: '1' })).toBe('256')
+    for (const TERM of ['linux', 'vt100', 'xterm-256color', 'something-odd', undefined]) expect(detectColorDepth({ TERM })).toBe('256')
+  })
+
+  it('truncates by visible width, keeping escapes', () => {
+    expect(truncateAnsi('\x1b[1mhello\x1b[0m world', 3)).toBe('\x1b[1mhel\x1b[0m')
+    expect(truncateAnsi('abc', 5)).toBe('abc')
+  })
+
+  it('rewrites only changed rows', () => {
+    expect(frameDiff(null, ['a', 'b'])).toBe('\x1b[Ha\r\nb')
+    expect(frameDiff(['a', 'b', 'c'], ['a', 'B', 'c'])).toBe('\x1b[2;1HB')
+    expect(frameDiff(['a', 'b'], ['a', 'b'])).toBe('')
+    expect(frameDiff(['a'], ['a', 'b'])).toBe('\x1b[Ha\r\nb')
+  })
+
+  it('bakes an asciinema v2 recording', () => {
+    const frames = [0, 0.5].map((t) => createTerminalRenderer(koi(), { cols: 30, rows: 8, depth: '256' }).frame(t))
+    const [header, ...events] = toAsciicast(frames, { cols: 30, rows: 8, fps: 2 }).trimEnd().split('\n').map((l) => JSON.parse(l))
+    expect(header).toEqual({ version: 2, width: 30, height: 8, env: { TERM: 'xterm-256color' } })
+    expect(events.map((e) => e.slice(0, 2))).toEqual([[0, 'o'], [0.5, 'o']])
+    expect(events[1][2]).toBe('\x1b[2J\x1b[H' + frames[1].join('\r\n'))
   })
 })

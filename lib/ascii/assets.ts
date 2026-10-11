@@ -1,4 +1,5 @@
-import { isAbsolute, resolve } from 'node:path'
+import { lstatSync, realpathSync } from 'node:fs'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import { headlessLayout, type HeadlessAssets, type HeadlessPlayerOptions } from './headless'
 import { buildModel, type Model } from './model'
 import { installNodeCanvas } from './node-canvas'
@@ -13,6 +14,10 @@ import { buildObjectModel, objectSpacing } from './world-assets'
 export interface AssetOptions extends Omit<HeadlessPlayerOptions, 'assets'> {
   /** Directory that relative image paths resolve against (the piece file's folder). */
   baseDir?: string
+  /** Confine local image paths to this folder: no absolute paths, file: URLs or `..` / symlink escapes. */
+  root?: string
+  /** Fetch http(s) image URLs (default true). */
+  allowRemote?: boolean
 }
 
 export interface LoadedAssets extends HeadlessAssets {
@@ -27,13 +32,48 @@ export function needsAssets(piece: Piece): boolean {
   return s.kind !== 'scene'
 }
 
+/**
+ * `abs` if it stays inside `root` once symlinks are followed (via its nearest existing ancestor, so
+ * paths that don't exist yet work too); throws otherwise. Refuses dangling symlinks.
+ */
+export function confinePath(root: string, abs: string): string {
+  const inside = (r: string, p: string) => p === r || p.startsWith(r.endsWith(sep) ? r : r + sep)
+  const realRoot = realpathSync(root)
+  if (!inside(resolve(root), abs)) throw new Error(`Path escapes the studio folder: ${relative(root, abs)}`)
+  for (let p = abs; ; p = dirname(p)) {
+    let exists = true
+    try {
+      lstatSync(p)
+    } catch {
+      exists = false
+    }
+    if (exists) {
+      let real: string
+      try {
+        real = realpathSync(p)
+      } catch {
+        throw new Error(`Path is a broken link: ${relative(root, p)}`)
+      }
+      if (!inside(realRoot, real)) throw new Error(`Path escapes the studio folder: ${relative(root, abs)}`)
+      return abs
+    }
+    if (p === dirname(p)) return abs
+  }
+}
+
 export async function loadPieceAssets(piece: Piece, opts: AssetOptions = {}): Promise<LoadedAssets> {
   const out: LoadedAssets = { errors: [] }
   if (!needsAssets(piece)) return out
   await installNodeCanvas()
   const { cfg, res, spacing } = headlessLayout(piece, opts)
   const base = opts.baseDir ?? process.cwd()
-  const local = (url: string) => (/^(data|https?|blob|file):/.test(url) || isAbsolute(url) ? url : resolve(base, url))
+  const local = (url: string) => {
+    if (/^https?:/i.test(url) && opts.allowRemote === false) throw new Error(`Remote images are disabled here: ${url}`)
+    if (/^(data|https?|blob):/i.test(url)) return url
+    if (opts.root === undefined) return /^file:/i.test(url) || isAbsolute(url) ? url : resolve(base, url)
+    if (/^[a-z][\w+.-]*:/i.test(url) || isAbsolute(url)) throw new Error(`Image paths must be relative to the studio folder: ${url}`)
+    return confinePath(opts.root, resolve(base, url))
+  }
   const s = piece.source
 
   if (s.kind === 'world') {

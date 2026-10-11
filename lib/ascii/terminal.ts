@@ -146,9 +146,71 @@ export function createTerminalRenderer(piece: Piece, opts: TerminalOptions): Ter
   }
 }
 
+const TRUECOLOR_PROGRAMS = new Set(['iTerm.app', 'WezTerm', 'vscode', 'ghostty', 'Hyper'])
+
+/**
+ * Colour depth from the environment. FORCE_COLOR (0–3) wins, then NO_COLOR, TERM=dumb (none),
+ * COLORTERM truecolor/24bit and known truecolor terminals; anything else (linux, vt100, unknown
+ * TERM, Apple Terminal) gets 256 at most.
+ */
 export function detectColorDepth(env: Record<string, string | undefined> = typeof process !== 'undefined' ? process.env : {}): ColorDepth {
+  const force = env.FORCE_COLOR
+  if (force !== undefined) {
+    if (force === '0' || force === 'false') return 'none'
+    if (force === '3') return 'truecolor'
+    if (force === '' || force === 'true' || force === '1' || force === '2') return '256'
+  }
   if (env.NO_COLOR) return 'none'
-  if (/truecolor|24bit/i.test(env.COLORTERM ?? '')) return 'truecolor'
-  if (env.TERM_PROGRAM === 'Apple_Terminal') return '256'
-  return /256|xterm|screen|tmux/i.test(env.TERM ?? '') ? '256' : 'truecolor'
+  const term = env.TERM ?? ''
+  if (term === 'dumb') return 'none'
+  if (/^(truecolor|24bit)$/i.test(env.COLORTERM ?? '')) return 'truecolor'
+  if (TRUECOLOR_PROGRAMS.has(env.TERM_PROGRAM ?? '') || /-direct$|kitty|ghostty|alacritty|foot/.test(term) || env.WT_SESSION) return 'truecolor'
+  return '256'
+}
+
+const ESC = /\x1b\[[\d;?]*[A-Za-z]/y
+
+/** Cuts a line to `width` visible characters, skipping ANSI escapes; resets colour if it cut any. */
+export function truncateAnsi(line: string, width: number): string {
+  let out = ''
+  let visible = 0
+  let styled = false
+  for (let i = 0; i < line.length; ) {
+    ESC.lastIndex = i
+    const m = ESC.exec(line)
+    if (m) {
+      out += m[0]
+      styled = true
+      i += m[0].length
+      continue
+    }
+    const ch = String.fromCodePoint(line.codePointAt(i)!)
+    if (visible === width) return out + (styled ? '\x1b[0m' : '')
+    out += ch
+    visible++
+    i += ch.length
+  }
+  return out
+}
+
+/**
+ * Escapes that turn the screen from `prev` into `next`: only changed rows are rewritten. Pass
+ * prev = null (first frame, resize, after a clear) to repaint every row from the top.
+ */
+export function frameDiff(prev: string[] | null, next: string[]): string {
+  if (!prev || prev.length !== next.length) return '\x1b[H' + next.join('\r\n')
+  let out = ''
+  for (let r = 0; r < next.length; r++) if (next[r] !== prev[r]) out += `\x1b[${r + 1};1H${next[r]}`
+  return out
+}
+
+/**
+ * An asciinema v2 recording (https://docs.asciinema.org/manual/asciicast/v2/): a header line, then
+ * one `[seconds, "o", data]` event per frame that clears, homes and draws it. No timestamp, so
+ * the same piece always bakes to the same file.
+ */
+export function toAsciicast(frames: string[][], opts: { cols: number; rows: number; fps: number; term?: string }): string {
+  const header = { version: 2, width: opts.cols, height: opts.rows, env: { TERM: opts.term ?? 'xterm-256color' } }
+  const events = frames.map((lines, i) => JSON.stringify([+(i / opts.fps).toFixed(6), 'o', (i === 0 ? '\x1b[?25l' : '') + '\x1b[2J\x1b[H' + lines.join('\r\n')]))
+  return [JSON.stringify(header), ...events].join('\n') + '\n'
 }

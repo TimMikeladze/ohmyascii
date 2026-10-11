@@ -1,4 +1,4 @@
-import { FONT_OPTIONS, type FontKey } from './config'
+import { FONT_OPTIONS, cleanCharset, type FontKey } from './config'
 import { newId, parseScene, rotationMatrix, serializeScene, type MeshScene, type SerializedScene, type Vec3 } from './scene'
 
 // A world is a whole scene: many objects (each with geometry, material, transform and procedural
@@ -162,6 +162,13 @@ export const GEOM_KINDS: GeomKind[] = ['shape', 'flat', 'text', 'curve', 'terrai
 
 export const MAX_ARRAY = 240
 export const MAX_PARTICLES = 20_000
+/** Whole-world limits so an untrusted world (share link, AI reply, piece) can't stall a frame. */
+export const MAX_OBJECTS = 64
+export const MAX_FIELDS = 8
+/** Particle points drawn per frame across the world (count × copies, rain ×4). */
+export const MAX_PARTICLE_POINTS = 120_000
+/** Object copies across the world (arrays included). */
+export const MAX_INSTANCES = 1500
 
 // ---------- defaults ----------
 
@@ -482,6 +489,8 @@ const vec = (v: unknown, d: Vec3): Vec3 => {
 }
 const pick = <T extends string>(v: unknown, opts: readonly T[], d: T): T => (opts.includes(v as T) ? (v as T) : d)
 const AXES: Axis[] = ['x', 'y', 'z']
+/** Image objects: web, data / blob or relative URLs (no other schemes). */
+const imageUrlOk = (url: string) => /^(https?:\/\/|data:image\/|blob:)/i.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url.trim())
 const FONT_KEYS = FONT_OPTIONS.map((f) => f.key)
 
 function parseGeom(data: unknown): Geom | null {
@@ -501,8 +510,8 @@ function parseGeom(data: unknown): Geom | null {
       return {
         kind,
         type: pick(g.type, FLAT_TYPES, 'circle'),
-        sides: Math.round(num(g.sides, d.sides as number, 3, 24)),
-        inner: num(g.inner, d.inner as number, 0.05, 0.95),
+        sides: Math.round(num(g.sides, d.sides as number, 3, 64)),
+        inner: num(g.inner, d.inner as number, 0.05, 0.99),
         round: num(g.round, 0, 0, 0.4),
         bevel: num(g.bevel, d.bevel as number, 0, 0.5),
         depth: num(g.depth, 0, 0, 1),
@@ -516,7 +525,7 @@ function parseGeom(data: unknown): Geom | null {
         depth: num(g.depth, 0.15, 0, 1),
       }
     case 'image':
-      return typeof g.url === 'string' && g.url ? { kind, url: g.url, depth: num(g.depth, 0.1, 0, 1), relief: g.relief === true } : null
+      return typeof g.url === 'string' && g.url && imageUrlOk(g.url) ? { kind, url: g.url, depth: num(g.depth, 0.1, 0, 1), relief: g.relief === true } : null
     case 'curve':
       return {
         kind,
@@ -531,7 +540,7 @@ function parseGeom(data: unknown): Geom | null {
         kind,
         type: pick(g.type, TERRAIN_TYPES, 'hills'),
         amp: num(g.amp, 0.18, 0, 1),
-        freq: num(g.freq, 3, 0.2, 20),
+        freq: num(g.freq, 3, 0.2, 40),
         speed: num(g.speed, 0, -5, 5),
         seed: num(g.seed, 1),
       }
@@ -615,14 +624,14 @@ export function parseObject(data: unknown): WObject | null {
   const array = parseArray(o.array)
   return {
     id: typeof o.id === 'string' && o.id ? o.id : newId(),
-    ...(typeof o.name === 'string' && o.name ? { name: o.name } : {}),
+    ...(typeof o.name === 'string' && o.name ? { name: o.name.slice(0, 80) } : {}),
     geom,
     pos: vec(o.pos, base.pos),
     rot: vec(o.rot, base.rot),
     scale: vec(o.scale, base.scale),
     color: color(o.color, base.color),
     ...(typeof o.shadow === 'string' && color(o.shadow, '') ? { shadow: o.shadow } : {}),
-    ...(typeof o.charset === 'string' && o.charset ? { charset: o.charset } : {}),
+    ...(typeof o.charset === 'string' && cleanCharset(o.charset) ? { charset: cleanCharset(o.charset) } : {}),
     emissive: num(o.emissive, base.emissive, 0, 1),
     ...(o.source === true ? { source: true } : {}),
     ...(o.tint === 'height' ? { tint: 'height' as const } : {}),
@@ -643,14 +652,15 @@ export function parseField(data: unknown): Field | null {
     id: typeof f.id === 'string' && f.id ? f.id : d.id,
     type,
     layer: f.layer === 'front' ? 'front' : 'back',
-    charset: typeof f.charset === 'string' && f.charset ? f.charset : d.charset,
+    charset: typeof f.charset === 'string' && cleanCharset(f.charset) ? cleanCharset(f.charset) : d.charset,
     colors: colors.length >= 2 ? colors : colors.length === 1 ? [d.colors[0], colors[0]] : d.colors,
     scale: num(f.scale, 1, 0.05, 20),
     speed: num(f.speed, 1, -20, 20),
     intensity: num(f.intensity, 1, 0, 1.5),
     angle: num(f.angle, 90),
     seed: num(f.seed, 1),
-    ...(f.random === true || (f.random === undefined && d.random) ? { random: true } : {}),
+    // Explicit false is kept: some patterns (rain, stars) default to random glyphs.
+    ...(f.random === true || (f.random === undefined && d.random) ? { random: true } : f.random === false && d.random ? { random: false } : {}),
     ...(f.hidden === true ? { hidden: true } : {}),
   }
 }
@@ -663,7 +673,7 @@ export function parseWorld(data: unknown): World | null {
   const dc = defaultCamera()
   const pan = Array.isArray(c.pan) && c.pan.length === 2 && c.pan.every((n) => typeof n === 'number' && Number.isFinite(n)) ? ([c.pan[0], c.pan[1]] as [number, number]) : dc.pan
   return {
-    ...(typeof w.name === 'string' && w.name ? { name: w.name } : {}),
+    ...(typeof w.name === 'string' && w.name ? { name: w.name.slice(0, 80) } : {}),
     duration: num(w.duration, 12, 1, 120),
     fit: num(w.fit, 1.4, 0.1, 50),
     camera: {
@@ -673,9 +683,24 @@ export function parseWorld(data: unknown): World | null {
       pan,
       anim: parseAnim(c.anim),
     },
-    fields: (Array.isArray(w.fields) ? w.fields : []).map(parseField).filter((f): f is Field => !!f),
-    objects: (Array.isArray(w.objects) ? w.objects : []).map(parseObject).filter((o): o is WObject => !!o),
+    fields: (Array.isArray(w.fields) ? w.fields : []).slice(0, MAX_FIELDS * 4).map(parseField).filter((f): f is Field => !!f).slice(0, MAX_FIELDS),
+    objects: budgetObjects((Array.isArray(w.objects) ? w.objects : []).slice(0, MAX_OBJECTS * 4).map(parseObject).filter((o): o is WObject => !!o).slice(0, MAX_OBJECTS)),
   }
+}
+
+/** Scales array counts and particle counts down (proportionally) to the world-wide budgets. */
+function budgetObjects(objects: WObject[]): WObject[] {
+  const copies = (o: WObject) => o.array?.count ?? 1
+  const instances = objects.reduce((n, o) => n + copies(o), 0)
+  if (instances > MAX_INSTANCES) {
+    const k = MAX_INSTANCES / instances
+    objects = objects.map((o) => (o.array ? { ...o, array: { ...o.array, count: Math.max(1, Math.floor(o.array.count * k)) } } : o))
+  }
+  const cost = (o: WObject) => (o.geom.kind === 'particles' ? o.geom.count * copies(o) * (o.geom.type === 'rain' ? 4 : 1) : 0)
+  const points = objects.reduce((n, o) => n + cost(o), 0)
+  if (points <= MAX_PARTICLE_POINTS) return objects
+  const k = MAX_PARTICLE_POINTS / points
+  return objects.map((o) => (o.geom.kind === 'particles' ? { ...o, geom: { ...o.geom, count: Math.max(1, Math.floor(o.geom.count * k)) } } : o))
 }
 
 // ---------- serialisation ----------

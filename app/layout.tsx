@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist_Mono, IBM_Plex_Mono, JetBrains_Mono, Space_Mono } from 'next/font/google'
+import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' })
@@ -9,10 +10,10 @@ const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], varia
 const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-plex', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'ohmyascii — describe a scene, watch it render in ASCII',
+  title: { default: 'ohmyascii — describe a scene, watch it render in ASCII', template: '%s · ohmyascii' },
   description:
     'Chat an animated ASCII world into existence — or start from a creation in the gallery. A studio and React component for turning photos, SVGs, logos and 3D scenes into rotatable ASCII renders.',
-  metadataBase: new URL(process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: 'ohmyascii',
     description: 'Describe a scene — get a live, rotatable ASCII world. Or start from the gallery.',

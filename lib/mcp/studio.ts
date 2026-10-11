@@ -1,29 +1,44 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { mergeConfig } from '../ascii/config'
-import { loadPieceAssets } from '../ascii/assets'
+import { confinePath, loadPieceAssets } from '../ascii/assets'
 import { createHeadlessPlayer } from '../ascii/headless'
 import { FRAME_SUFFIX, PIECE_SUFFIX, parsePiece, pieceStem, serializePiece, type Piece } from '../ascii/piece'
 import { buildInstructions } from '../ascii/world-prompt'
 import { WORLD_PRESETS, getWorldPreset } from '../ascii/worlds'
 
 // The studio's MCP tools as plain functions over one root folder (the folder the studio holds).
-// scripts/mcp-server.ts exposes them over stdio. Every path is resolved inside `root`.
+// scripts/mcp-server.ts exposes them over stdio. Every path is resolved inside `root` (symlinks
+// followed), dot-segments are refused, and only *.ascii.json pieces (+ their frame) are read.
 // See docs/local-claude.md.
 
 const SKIP_DIRS = new Set(['node_modules', '.next', 'dist', 'build', 'out'])
 
+export interface StudioOptions {
+  /** Let pieces load http(s) images while rendering (default false). */
+  allowRemoteImages?: boolean
+}
+
 export class StudioFiles {
   readonly root: string
-  constructor(root: string) {
+  readonly allowRemoteImages: boolean
+  constructor(root: string, opts: StudioOptions = {}) {
     this.root = resolve(root)
+    this.allowRemoteImages = opts.allowRemoteImages ?? false
   }
 
-  /** Root-relative path → absolute, refusing anything that escapes the root. */
+  /** Root-relative path → absolute, refusing escapes (`..`, absolute, symlinks out) and dotfiles. */
   resolve(path: string): string {
     const abs = resolve(this.root, path)
-    if (abs !== this.root && !abs.startsWith(this.root + sep)) throw new Error(`Path escapes the studio folder: ${path}`)
+    confinePath(this.root, abs)
+    if (relative(this.root, abs).split(sep).some((s) => s.startsWith('.'))) throw new Error(`Hidden paths are off limits: ${path}`)
     return abs
+  }
+
+  /** A piece path (`*.ascii.json`) → absolute. */
+  private piecePath(path: string): string {
+    if (!path.endsWith(PIECE_SUFFIX)) throw new Error(`Piece paths must end with ${PIECE_SUFFIX}`)
+    return this.resolve(path)
   }
 
   listPieces(): { path: string; name?: string; kind?: string; hasFrame: boolean; error?: string }[] {
@@ -36,12 +51,17 @@ export class StudioFiles {
         if (entry.isDirectory()) walk(abs, depth + 1)
         else if (entry.name.endsWith(PIECE_SUFFIX)) {
           const path = relative(this.root, abs).split(sep).join('/')
-          const parsed = parsePiece(readFileSync(abs, 'utf8'))
-          out.push({
-            path,
-            ...('piece' in parsed ? { name: parsed.piece.name, kind: parsed.piece.source.kind } : { error: parsed.error }),
-            hasFrame: existsSync(this.resolve(pieceStem(path) + FRAME_SUFFIX)),
-          })
+          // One bad entry (symlink out, unreadable) is reported, not fatal.
+          try {
+            const parsed = parsePiece(readFileSync(this.piecePath(path), 'utf8'))
+            out.push({
+              path,
+              ...('piece' in parsed ? { name: parsed.piece.name, kind: parsed.piece.source.kind } : { error: parsed.error }),
+              hasFrame: existsSync(this.resolve(pieceStem(path) + FRAME_SUFFIX)),
+            })
+          } catch (e) {
+            out.push({ path, hasFrame: false, error: (e as Error).message })
+          }
         }
       }
     }
@@ -50,7 +70,7 @@ export class StudioFiles {
   }
 
   readPiece(path: string): { text: string; frame: string | null; frameAgeSeconds: number | null } {
-    const abs = this.resolve(path)
+    const abs = this.piecePath(path)
     const frameAbs = this.resolve(pieceStem(path) + FRAME_SUFFIX)
     const hasFrame = existsSync(frameAbs)
     return {
@@ -62,14 +82,19 @@ export class StudioFiles {
 
   /** Validates, normalises and writes a piece. Returns what was written. */
   writePiece(path: string, json: string): { written: string; report: PieceReport } {
-    if (!path.endsWith(PIECE_SUFFIX)) throw new Error(`Piece paths must end with ${PIECE_SUFFIX}`)
+    const abs = this.piecePath(path)
     const report = validatePiece(json)
     if (!report.piece) throw new Error(report.errors.join('; '))
-    const abs = this.resolve(path)
     mkdirSync(dirname(abs), { recursive: true })
     const text = serializePiece(report.piece)
     writeFileSync(abs, text)
     return { written: text, report }
+  }
+
+  /** renderPieceText with images confined to the root; `path` (a piece file) sets the base folder. */
+  renderPiece(json: string, opts: Omit<RenderOptions, 'baseDir' | 'root' | 'allowRemote'> & { path?: string } = {}): Promise<string> {
+    const { path, ...rest } = opts
+    return renderPieceText(json, { ...rest, baseDir: path ? dirname(this.piecePath(path)) : this.root, root: this.root, allowRemote: this.allowRemoteImages })
   }
 }
 
@@ -101,12 +126,24 @@ export function validatePiece(json: string): PieceReport {
   return { piece, errors: [], warnings }
 }
 
+export interface RenderOptions {
+  times?: number[]
+  cols?: number
+  rows?: number
+  /** Folder relative image paths resolve against. */
+  baseDir?: string
+  /** Confine image paths to this folder (see confinePath). */
+  root?: string
+  /** Fetch http(s) images (default true). */
+  allowRemote?: boolean
+}
+
 /** Headless text frames of any piece; image / text / preset geometry rasterises via @napi-rs/canvas. */
-export async function renderPieceText(json: string, opts: { times?: number[]; cols?: number; rows?: number; baseDir?: string } = {}): Promise<string> {
+export async function renderPieceText(json: string, opts: RenderOptions = {}): Promise<string> {
   const report = validatePiece(json)
   if (!report.piece) throw new Error(report.errors.join('; '))
-  const { times = [0, 2], cols = 96, rows = 40, baseDir } = opts
-  const assets = await loadPieceAssets(report.piece, { cols, rows, baseDir })
+  const { times = [0, 2], cols = 96, rows = 40, baseDir, root, allowRemote } = opts
+  const assets = await loadPieceAssets(report.piece, { cols, rows, baseDir, root, allowRemote })
   const player = createHeadlessPlayer(report.piece, { cols, rows, assets })
   const parts = times.map((t) => `t = ${t}s\n${player.render(t) || '(empty frame)'}`)
   const missing = [...player.skipped, ...assets.errors]

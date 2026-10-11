@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, FONT_OPTIONS, diffFromDefaults, mergeConfig, type AsciiConfig, type FontKey } from './config'
+import { FONT_OPTIONS, diffFromDefaults, mergeConfig, sanitizeConfig, type AsciiConfig, type FontKey } from './config'
 import { parseScene, serializeScene, type MeshScene, type SerializedScene } from './scene'
 import { parseWorld, serializeWorld, type SerializedWorld, type World } from './world'
 
@@ -35,20 +35,13 @@ export interface SerializedPiece {
 
 const FONT_KEYS = new Set<string>(FONT_OPTIONS.map((f) => f.key))
 
-/** Keeps known keys whose value has the default's type. */
+/** Keeps known keys with a valid, in-range value (see sanitizeConfig). */
 function parseConfig(data: unknown): AsciiConfig {
-  const out: Partial<Record<keyof AsciiConfig, unknown>> = {}
-  if (data && typeof data === 'object') {
-    for (const [k, v] of Object.entries(data)) {
-      if (!(k in DEFAULT_CONFIG)) continue
-      const key = k as keyof AsciiConfig
-      if (typeof v !== typeof DEFAULT_CONFIG[key]) continue
-      if (typeof v === 'number' && !Number.isFinite(v)) continue
-      out[key] = v
-    }
-  }
-  return mergeConfig(out as Partial<AsciiConfig>)
+  return mergeConfig(sanitizeConfig(data))
 }
+
+/** Longest text source; longer text would only shrink into an unreadable model. */
+export const MAX_TEXT = 400
 
 function parseSource(data: unknown): PieceSource | null {
   if (!data || typeof data !== 'object') return null
@@ -60,9 +53,9 @@ function parseSource(data: unknown): PieceSource | null {
       return typeof s.text === 'string'
         ? {
             kind: 'text',
-            text: s.text,
+            text: s.text.slice(0, MAX_TEXT),
             fontKey: typeof s.fontKey === 'string' && FONT_KEYS.has(s.fontKey) ? (s.fontKey as FontKey) : 'geist-mono',
-            weight: typeof s.weight === 'number' ? s.weight : 700,
+            weight: typeof s.weight === 'number' && Number.isFinite(s.weight) ? Math.min(900, Math.max(100, s.weight)) : 700,
           }
         : null
     case 'image':

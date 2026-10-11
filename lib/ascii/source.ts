@@ -55,25 +55,35 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
+// Longest canvas side for rendered text. The model is downsampled to ≤ 288 cells anyway; this keeps
+// long lines well under browser canvas limits (Safari: 16.7M px).
+const MAX_TEXT_PX = 4096
+
 async function loadText(spec: Extract<SourceSpec, { kind: 'text' }>): Promise<LoadedSource> {
   const family = resolveFontFamily(spec.fontKey)
-  const fontSize = 220
+  const text = (spec.text || ' ').slice(0, 400)
+  const lines = text.split('\n').slice(0, 6)
+  const probe = document.createElement('canvas').getContext('2d')
+  if (!probe) throw new Error('Canvas is not available')
+  // Measure at 220px, then shrink the font until the widest line fits.
+  probe.font = `${spec.weight} 220px ${family}`
+  const wide = Math.max(...lines.map((l) => probe.measureText(l).width), 40)
+  const fontSize = Math.max(24, Math.min(220, Math.floor((220 * (MAX_TEXT_PX - 40)) / wide)))
   const font = `${spec.weight} ${fontSize}px ${family}`
   try {
-    await document.fonts.load(font, spec.text || 'A')
+    await document.fonts.load(font, text)
   } catch {
     // fall back to whichever font resolves
   }
-  const lines = (spec.text || ' ').split('\n').slice(0, 6)
-  const probe = document.createElement('canvas').getContext('2d')!
   probe.font = font
   const lineHeight = fontSize * 1.05
-  const widest = Math.max(...lines.map((l) => probe.measureText(l).width), 40)
+  const widest = Math.min(MAX_TEXT_PX - 40, Math.max(...lines.map((l) => probe.measureText(l).width), 40))
   const pad = 20
   const canvas = document.createElement('canvas')
   canvas.width = Math.ceil(widest + pad * 2)
   canvas.height = Math.ceil(lineHeight * lines.length + pad * 2)
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas is not available')
   ctx.font = font
   ctx.fillStyle = '#ffffff'
   ctx.textBaseline = 'top'

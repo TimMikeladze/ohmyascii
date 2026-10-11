@@ -4,6 +4,9 @@ import { fieldSampler } from './fields'
 import { parsePiece, serializePiece } from './piece'
 import {
   FIELD_TYPES,
+  MAX_INSTANCES,
+  MAX_OBJECTS,
+  MAX_PARTICLE_POINTS,
   defaultField,
   evalAnim,
   makeObject,
@@ -88,6 +91,23 @@ describe('parseWorld / serializeWorld', () => {
     const text = serializePiece({ source: { kind: 'world', world }, config: mergeConfig({ bg: '#000000' }) })
     const parsed = parsePiece(text)
     expect('piece' in parsed && parsed.piece.source.kind === 'world' && parsed.piece.source.world.objects.length).toBe(world.objects.length)
+  })
+})
+
+describe('untrusted worlds', () => {
+  it('caps objects and scales particles down to the world budget', () => {
+    const storm = { kind: 'particles', type: 'rain', count: 20_000 }
+    const w = parseWorld({ objects: Array.from({ length: 100 }, () => ({ geom: storm, array: { count: 240 } })) })!
+    expect(w.objects.length).toBe(MAX_OBJECTS)
+    const copies = w.objects.reduce((n, o) => n + (o.array?.count ?? 1), 0)
+    expect(copies).toBeLessThanOrEqual(MAX_INSTANCES)
+    const points = w.objects.reduce((n, o) => n + (o.geom.kind === 'particles' ? o.geom.count * 4 * (o.array?.count ?? 1) : 0), 0)
+    expect(points).toBeLessThanOrEqual(MAX_PARTICLE_POINTS)
+  })
+
+  it('refuses image URLs with other schemes', () => {
+    const w = parseWorld({ objects: [{ geom: { kind: 'image', url: 'javascript:alert(1)' } }, { geom: { kind: 'image', url: 'https://a.dev/x.png' } }] })!
+    expect(w.objects.map((o) => (o.geom.kind === 'image' ? o.geom.url : ''))).toEqual(['https://a.dev/x.png'])
   })
 })
 

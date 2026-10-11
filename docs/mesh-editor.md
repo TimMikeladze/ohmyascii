@@ -48,7 +48,7 @@ Plain JSON — goes into history, localStorage and (minus paint/meshes) share li
 
 ## Studio
 
-- Source → "Model, sculpt & paint in 3D" switches to the scene source (starter: sphere on a box with
+- The **Model** tab switches to the scene source (starter: sphere on a box with
   a cylinder cut through it).
 - Model section: add-shape buttons, shape list (select, add/subtract, duplicate, delete), selected
   shape transform sliders + colour, blend slider, import OBJ/STL, clear sculpt / paint, export

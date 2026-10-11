@@ -49,6 +49,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "lib/ascii/world-assets.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "lib/ascii/world-renderer.ts",
           "type": "registry:lib"
         },
@@ -72,7 +76,8 @@
         "swr",
         "use-fs",
         "ai",
-        "zod"
+        "zod",
+        "fflate"
       ],
       "registryDependencies": [
         "utils"
@@ -159,6 +164,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "lib/ascii/world-assets.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "lib/ascii/world-renderer.ts",
           "type": "registry:lib"
         },
@@ -179,6 +188,10 @@
           "type": "registry:lib"
         },
         {
+          "path": "lib/ascii/handoff.ts",
+          "type": "registry:lib"
+        },
+        {
           "path": "components/studio/world-panel.tsx",
           "type": "registry:component"
         },
@@ -190,6 +203,23 @@
           "path": "app/api/generate/route.ts",
           "type": "registry:file",
           "target": "app/api/generate/route.ts"
+        },
+        {
+          "path": "lib/agent/claude-cli.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/agent/local.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/agent/rate-limit.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "app/api/agent/route.ts",
+          "type": "registry:file",
+          "target": "app/api/agent/route.ts"
         }
       ]
     }

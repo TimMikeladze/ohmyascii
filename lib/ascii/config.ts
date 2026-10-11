@@ -295,8 +295,104 @@ export const LOOKS: LookPreset[] = [
   },
 ]
 
+// Safe ranges for every numeric key. Wider than the studio sliders (pieces and AI may go further),
+// tight enough that no value can stall a frame (e.g. `smooth` is a blur pass count).
+const RANGES: { [K in keyof AsciiConfig]?: [number, number] } = {
+  threshold: [0, 1],
+  smooth: [0, 8],
+  thickness: [0, 2],
+  reliefDepth: [0, 2],
+  fontWeight: [100, 900],
+  cellSize: [3, 64],
+  cellAspect: [0.3, 4],
+  glyphScale: [0.2, 3],
+  brightness: [-1, 1],
+  contrast: [0.1, 5],
+  gamma: [0.1, 5],
+  ambient: [0, 1],
+  lightAzimuth: [-360, 360],
+  lightElevation: [-90, 90],
+  depthFade: [0, 1],
+  gridOpacity: [0, 1],
+  rotX: [-360, 360],
+  rotY: [-360, 360],
+  rotZ: [-360, 360],
+  spinX: [-720, 720],
+  spinY: [-720, 720],
+  spinZ: [-720, 720],
+  swayX: [0, 180],
+  swayY: [0, 180],
+  swaySpeed: [0, 10],
+  inertia: [0.001, 0.95],
+  zoom: [0.05, 10],
+  perspective: [0, 1.5],
+  offsetX: [-2, 2],
+  offsetY: [-2, 2],
+  waveAmp: [0, 1],
+  waveFreq: [0, 60],
+  waveSpeed: [-20, 20],
+  shimmer: [0, 1],
+  scanStrength: [0, 1],
+  scanSpeed: [0, 5],
+  intro: [0, 10],
+}
+
+const ENUMS: { [K in keyof AsciiConfig]?: readonly string[] } = {
+  shape: ['extrude', 'relief'],
+  maskMode: ['auto', 'alpha', 'luma', 'luma-invert', 'none'],
+  colorMode: ['mono', 'gradient', 'depth', 'source'],
+  shade: ['light', 'image', 'both'],
+  motion: ['static', 'spin', 'sway'],
+  fontKey: ['geist-mono', 'jetbrains', 'space', 'plex', 'system'],
+}
+
+const COLOR_KEYS = new Set<keyof AsciiConfig>(['fg', 'fg2', 'bg', 'gridColor'])
+const HEX = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i
+export const MAX_CHARSET = 64
+
+/** Glyph ramp without control / non-space whitespace characters, at most `max` glyphs. */
+export function cleanCharset(value: string, max = MAX_CHARSET): string {
+  return Array.from(value.replace(/[\u0000-\u001f\u007f-\u009f\u00a0\u2000-\u200f\u2028-\u202f\u205f\u3000\ufeff]/g, ''))
+    .slice(0, max)
+    .join('')
+}
+
+/**
+ * Keeps known keys whose value has the default's type and clamps it to a safe range. Use on any
+ * config from outside the app (pieces, share links, AI replies, props).
+ */
+export function sanitizeConfig(data: unknown): Partial<AsciiConfig> {
+  const out: Record<string, unknown> = {}
+  if (!data || typeof data !== 'object') return out
+  for (const [k, v] of Object.entries(data)) {
+    if (!(k in DEFAULT_CONFIG)) continue
+    const key = k as keyof AsciiConfig
+    if (typeof v !== typeof DEFAULT_CONFIG[key]) continue
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) continue
+      const range = RANGES[key]
+      out[key] = range ? Math.min(range[1], Math.max(range[0], v)) : v
+    } else if (typeof v === 'string') {
+      const opts = ENUMS[key]
+      if (opts) {
+        if (opts.includes(v)) out[key] = v
+      } else if (COLOR_KEYS.has(key)) {
+        if (HEX.test(v)) out[key] = v
+      } else if (key === 'charset') {
+        const c = cleanCharset(v)
+        if (c) out[key] = c
+      } else if (key === 'gridChar') {
+        const c = cleanCharset(v, 1)
+        if (c) out[key] = c
+      }
+    } else out[key] = v
+  }
+  return out as Partial<AsciiConfig>
+}
+
+/** Defaults overlaid with `partial`, sanitised (out-of-range values are clamped, bad ones dropped). */
 export function mergeConfig(partial?: Partial<AsciiConfig>): AsciiConfig {
-  return { ...DEFAULT_CONFIG, ...(partial ?? {}) }
+  return { ...DEFAULT_CONFIG, ...sanitizeConfig(partial) }
 }
 
 export function diffFromDefaults(config: AsciiConfig): Partial<AsciiConfig> {

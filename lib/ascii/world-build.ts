@@ -24,13 +24,17 @@ function geomKey(g: Geom): string {
 }
 
 /**
- * Per-object models for `world`, index-aligned with `world.objects` (null while loading).
- * `pxPerUnit` is screen pixels per world unit, `cellPx` the glyph cell width.
+ * Per-object models for `world`, index-aligned with `world.objects` (null while loading or when
+ * an asset failed). `pxPerUnit` is screen pixels per world unit, `cellPx` the glyph cell width.
+ * `onError` hears about each text / image object that couldn't load (once per geometry).
  */
-export function useWorldBuild(world: World | null, pxPerUnit: number, cellPx: number): (BuiltObject | null)[] {
+export function useWorldBuild(world: World | null, pxPerUnit: number, cellPx: number, onError?: (e: Error) => void): (BuiltObject | null)[] {
   const cache = useRef(new Map<string, GeomModel>())
   const [asyncModels, setAsyncModels] = useState(() => new Map<string, Model>())
   const pending = useRef(new Set<string>())
+  const failed = useRef(new Set<string>())
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
   const h = quantize((cellPx * 0.6) / Math.max(1e-3, pxPerUnit))
 
   const jobs = useMemo(() => {
@@ -41,15 +45,25 @@ export function useWorldBuild(world: World | null, pxPerUnit: number, cellPx: nu
     })
   }, [world, h])
 
-  // Text / image models load in the background, then trigger a rebuild.
+  // Text / image models load in the background, then trigger a rebuild. Loaded models are kept
+  // only while the world still uses them; failures aren't retried.
   useEffect(() => {
     for (const { o, hl, key } of jobs) {
       const g = o.geom
-      if ((g.kind !== 'text' && g.kind !== 'image') || asyncModels.has(key) || pending.current.has(key)) continue
+      if ((g.kind !== 'text' && g.kind !== 'image') || asyncModels.has(key) || pending.current.has(key) || failed.current.has(key)) continue
       pending.current.add(key)
       buildAsync(g, hl)
-        .then((m) => setAsyncModels((prev) => new Map(prev).set(key, m)))
-        .catch(() => undefined)
+        .then((m) =>
+          setAsyncModels((prev) => {
+            const live = new Set(jobs.map((j) => j.key))
+            const next = new Map([...prev].filter(([k]) => live.has(k)))
+            return next.set(key, m)
+          }),
+        )
+        .catch((e: unknown) => {
+          failed.current.add(key)
+          onErrorRef.current?.(e instanceof Error ? e : new Error(String(e)))
+        })
         .finally(() => pending.current.delete(key))
     }
   }, [jobs, asyncModels])

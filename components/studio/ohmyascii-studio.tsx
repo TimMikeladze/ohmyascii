@@ -3,9 +3,9 @@
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Code2, Link2, Pause, Play, RotateCcw, Upload, Undo2 } from 'lucide-react'
+import { Link2, Pause, Play, RotateCcw, Upload, Undo2 } from 'lucide-react'
 import { OhMyAscii, type OhMyAsciiHandle, type OhMyAsciiStats, type BrushPhase, type MeshHit } from '@/components/ohmyascii'
-import { CHARSETS, DEFAULT_CONFIG, LOOKS, diffFromDefaults, mergeConfig, type AsciiConfig, type ColorMode } from '@/lib/ascii/config'
+import { CHARSETS, LOOKS, diffFromDefaults, type AsciiConfig, type ColorMode } from '@/lib/ascii/config'
 import { getSourcePresets } from '@/lib/ascii/presets'
 import {
   hexToInt,
@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { useStudioFolder } from './folder'
 import { FolderPanel } from './folder-panel'
 import { ModelPanel, TOOLS } from './model-panel'
-import { decodeShare, encodeShare } from './share'
+import { STUDIO_DEFAULTS, decodeShare, studioConfig, encodeShare, shareFragment } from './share'
 import { StudioPanel } from './studio-panel'
 import type { BrushSettings, SceneTool, SourceState } from './types'
 import { WorldPanel } from './world-panel'
@@ -82,10 +82,10 @@ export function Hero() {
 }`
   }
   if (source.kind === 'text') {
-    src = `{{ kind: 'text', text: ${JSON.stringify(source.text)}, fontKey: '${source.fontKey}', weight: ${source.weight} }}`
+    src = `{{ kind: 'text', text: ${JSON.stringify(source.text)}, fontKey: ${JSON.stringify(source.fontKey)}, weight: ${Number(source.weight) || 700} }}`
   } else if (source.kind === 'upload') {
-    src = `"/${source.name}"`
-    note = `      // put ${source.name} in /public\n`
+    src = JSON.stringify(`/${source.name}`)
+    note = `      // put ${source.name.replace(/[\r\n]/g, ' ')} in /public\n`
   } else {
     src = `"/logo.svg"`
     note = '      // any image, SVG or logo URL — the studio preview used a built-in mark\n'
@@ -141,7 +141,6 @@ function randomLook(cfg: AsciiConfig): AsciiConfig {
     colorMode: pick(modes),
     lightAzimuth: Math.round(Math.random() * 120 - 60),
     lightElevation: Math.round(20 + Math.random() * 45),
-    motion: pick(['spin', 'sway'] as const),
     waveAmp: Math.random() < 0.3 ? +(Math.random() * 0.08).toFixed(3) : 0,
     scanStrength: Math.random() < 0.3 ? +(0.2 + Math.random() * 0.5).toFixed(2) : 0,
   }
@@ -159,6 +158,13 @@ interface Snapshot {
   cfg: AsciiConfig
   scene: MeshScene
   world: World
+  source: SourceState
+  worldPreset: string | null
+}
+
+/** Single-quoted for POSIX shells. */
+function shellQuote(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`
 }
 
 function isTyping(target: EventTarget | null) {
@@ -167,7 +173,7 @@ function isTyping(target: EventTarget | null) {
 }
 
 export function OhMyAsciiStudio() {
-  const [cfg, setCfg] = useState<AsciiConfig>(DEFAULT_CONFIG)
+  const [cfg, setCfg] = useState<AsciiConfig>(STUDIO_DEFAULTS)
   const [source, setSource] = useState<SourceState>({ kind: 'preset', key: 'starburst' })
   const [paused, setPaused] = useState(false)
   const [replayKey, setReplayKey] = useState(0)
@@ -189,6 +195,10 @@ export function OhMyAsciiStudio() {
   const [world, setWorld] = useState<World>(() => WORLD_PRESETS[0].world())
   const [worldSel, setWorldSel] = useState<string | null>(null)
   const [worldPreset, setWorldPreset] = useState<string | null>(WORLD_PRESETS[0].key)
+  const sourceRef = useRef(source)
+  sourceRef.current = source
+  const worldPresetRef = useRef(worldPreset)
+  worldPresetRef.current = worldPreset
 
   // Undo history over config + scene. Rapid edits (slider drags) within 500ms coalesce into one step.
   const pastRef = useRef<Snapshot[]>([])
@@ -198,7 +208,13 @@ export function OhMyAsciiStudio() {
   cfgRef.current = cfg
   const sceneRef = useRef(scene)
   const worldRef = useRef(world)
-  const snapshot = (): Snapshot => ({ cfg: cfgRef.current, scene: sceneRef.current, world: worldRef.current })
+  const snapshot = (): Snapshot => ({
+    cfg: cfgRef.current,
+    scene: sceneRef.current,
+    world: worldRef.current,
+    source: sourceRef.current,
+    worldPreset: worldPresetRef.current,
+  })
   const pushHistory = useCallback((coalesce: boolean) => {
     const now = Date.now()
     if (!coalesce || now - lastEditRef.current > 500) {
@@ -250,6 +266,13 @@ export function OhMyAsciiStudio() {
     setCfg(target.cfg)
     setScene(target.scene)
     setWorld(target.world)
+    setWorldPreset(target.worldPreset)
+    // An upload's blob URL is released when replaced, so only the current one can come back.
+    const src = target.source
+    if (src.kind !== 'upload' || src.url === uploadUrlRef.current) {
+      if (src.kind !== sourceRef.current.kind) setReplayKey((k) => k + 1)
+      setSource(src)
+    }
   }, [])
   const undo = useCallback(() => step(pastRef, futureRef), [step])
   const redo = useCallback(() => step(futureRef, pastRef), [step])
@@ -406,9 +429,9 @@ export function OhMyAsciiStudio() {
   }, [recording, flash, baseName, source.kind])
 
   const share = useCallback(async () => {
-    const url = `${location.origin}${location.pathname}#s=${encodeShare(cfg, source, scene, world)}`
-    history.replaceState(null, '', url)
+    const url = `${location.origin}${location.pathname}#${shareFragment(cfg, source, scene, world)}`
     await copy(url, 'share')
+    if (url.length > 8000) flash('Link copied — it is long; some chat apps cut links over 8 KB. Export JSON for big scenes')
     if (source.kind === 'upload') flash('Link copied — uploads stay local, so the link uses the default source')
     else if (source.kind === 'scene' && (Object.keys(scene.paint).length || scene.prims.some((p) => p.type === 'mesh')))
       flash('Link copied — paint and imported meshes stay local; export Scene JSON to share them')
@@ -417,62 +440,97 @@ export function OhMyAsciiStudio() {
     else flash('Share link copied')
   }, [cfg, source, scene, world, copy, flash])
 
-  // Restore from a share link (on load and when the hash changes), else from the last session.
+  // Restore the last session, then apply a share link / gallery deep link on top (on load and when
+  // the hash changes). The hash is then cleared so a reload shows the latest work, not the link.
+  // Each store restores on its own: a corrupt scene doesn't lose the world.
   const [restored, setRestored] = useState(false)
+  // The hash the page opened with, kept across a dev StrictMode re-run of the effect (the first
+  // run clears it from the URL).
+  const initialHashRef = useRef<string | null>(null)
   useEffect(() => {
-    const apply = () => {
-      const shared = decodeShare(location.hash)
+    initialHashRef.current ??= location.hash
+    const read = <T,>(key: string, parse: (raw: string) => T | null): T | null => {
+      try {
+        const raw = localStorage.getItem(key)
+        return raw ? parse(raw) : null
+      } catch {
+        return null
+      }
+    }
+    const saved = read(SESSION_KEY, (raw) => decodeShare(raw, STUDIO_DEFAULTS))
+    if (saved) {
+      cfgRef.current = saved.cfg
+      setCfg(saved.cfg)
+      if (saved.source) setSource(saved.source)
+    }
+    const savedScene = read(SCENE_KEY, (raw) => parseScene(JSON.parse(raw)))
+    if (savedScene) {
+      sceneRef.current = savedScene
+      setScene(savedScene)
+    }
+    const savedWorld = read(WORLD_KEY, (raw) => parseWorld(JSON.parse(raw)))
+    if (savedWorld) {
+      worldRef.current = savedWorld
+      setWorld(savedWorld)
+      setWorldPreset(WORLD_PRESETS.find((p) => p.label === savedWorld.name)?.key ?? null)
+    }
+
+    const clearHash = () => history.replaceState(history.state, '', `${location.pathname}${location.search}`)
+    const apply = (hash = location.hash) => {
+      const shared = decodeShare(hash, STUDIO_DEFAULTS)
       if (!shared) {
         // Gallery deep link: `#w=<preset key>` opens the studio on that creation.
-        const wm = location.hash.match(/[#&]w=([\w-]+)/)
+        const wm = hash.match(/[#&]w=([\w-]+)/)
         const preset = wm ? getWorldPreset(wm[1]) : undefined
-        if (!preset) return false
-        commitWorld(() => preset.world(), false)
-        commit(() => mergeConfig(preset.config), false)
+        if (!preset) return
+        pushHistory(false)
+        worldRef.current = preset.world()
+        cfgRef.current = studioConfig(preset.config)
+        setWorld(worldRef.current)
+        setCfg(cfgRef.current)
         setWorldPreset(wm![1])
         setWorldSel(null)
         setSource({ kind: 'world' })
         setTool('orbit')
         meshRef.current?.resetView()
         setReplayKey((k) => k + 1)
-        return true
+        clearHash()
+        return
       }
-      if (shared.scene) commitScene(() => shared.scene!, false)
+      // One undo step back to the restored session.
+      pushHistory(false)
+      if (shared.scene) {
+        sceneRef.current = shared.scene
+        setScene(shared.scene)
+      }
       if (shared.world) {
-        commitWorld(() => shared.world!, false)
+        worldRef.current = shared.world
+        setWorld(shared.world)
         setWorldPreset(null)
       }
-      commit(() => shared.cfg, false)
+      cfgRef.current = shared.cfg
+      setCfg(shared.cfg)
       if (shared.source) setSource(shared.source)
       setReplayKey((k) => k + 1)
-      return true
+      clearHash()
     }
-    if (!apply()) {
-      try {
-        const saved = decodeShare(localStorage.getItem(SESSION_KEY) ?? '')
-        if (saved) {
-          setCfg(saved.cfg)
-          if (saved.source) setSource(saved.source)
-        }
-        const raw = localStorage.getItem(SCENE_KEY)
-        const savedScene = raw ? parseScene(JSON.parse(raw)) : null
-        if (savedScene) {
-          sceneRef.current = savedScene
-          setScene(savedScene)
-        }
-        const rawWorld = localStorage.getItem(WORLD_KEY)
-        const savedWorld = rawWorld ? parseWorld(JSON.parse(rawWorld)) : null
-        if (savedWorld) {
-          worldRef.current = savedWorld
-          setWorld(savedWorld)
-          setWorldPreset(WORLD_PRESETS.find((p) => p.label === savedWorld.name)?.key ?? null)
-        }
-      } catch {}
-    }
+    apply(initialHashRef.current)
     setRestored(true)
-    window.addEventListener('hashchange', apply)
-    return () => window.removeEventListener('hashchange', apply)
-  }, [commit, commitScene, commitWorld])
+    const onHash = () => apply()
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [pushHistory])
+
+  // Storage-full warnings show once per session.
+  const storageWarnedRef = useRef(false)
+  const warnStorage = useCallback(
+    (message: string) => {
+      if (storageWarnedRef.current) return
+      storageWarnedRef.current = true
+      flash(message)
+    },
+    [flash],
+  )
 
   useEffect(() => {
     if (!restored) return
@@ -490,21 +548,26 @@ export function OhMyAsciiStudio() {
       } catch {
         try {
           localStorage.setItem(SCENE_KEY, JSON.stringify(serializeScene({ ...scene, meshes: {}, prims: scene.prims.filter((p) => p.type !== 'mesh') })))
-        } catch {}
+          warnStorage('Browser storage is full — imported meshes won’t survive a reload. Export Scene JSON to keep them')
+        } catch {
+          warnStorage('Browser storage is full — this scene won’t survive a reload. Export Scene JSON to keep it')
+        }
       }
     }, 600)
     return () => window.clearTimeout(t)
-  }, [scene, restored])
+  }, [scene, restored, warnStorage])
 
   useEffect(() => {
     if (!restored) return
     const t = window.setTimeout(() => {
       try {
         localStorage.setItem(WORLD_KEY, JSON.stringify(serializeWorld(world, true)))
-      } catch {}
+      } catch {
+        warnStorage('Browser storage is full — this world won’t survive a reload. Export it to keep it')
+      }
     }, 600)
     return () => window.clearTimeout(t)
-  }, [world, restored])
+  }, [world, restored, warnStorage])
 
   // ---- Modelling ----
   const pickTool = useCallback(
@@ -521,8 +584,7 @@ export function OhMyAsciiStudio() {
   const enterScene = useCallback(() => {
     setSource({ kind: 'scene' })
     setReplayKey((k) => k + 1)
-    flash('Modelling — add shapes, then sculpt or paint them on the canvas')
-  }, [flash])
+  }, [])
 
   const applyWorldPreset = useCallback(
     (key: string) => {
@@ -530,7 +592,7 @@ export function OhMyAsciiStudio() {
       if (!preset) return
       pushHistory(false)
       const next = preset.world()
-      const nextCfg = mergeConfig(preset.config)
+      const nextCfg = studioConfig(preset.config)
       worldRef.current = next
       cfgRef.current = nextCfg
       setWorld(next)
@@ -543,13 +605,12 @@ export function OhMyAsciiStudio() {
     [pushHistory],
   )
 
+  // Switching to the Scene tab keeps the world you had (a new session starts on the first gallery scene).
   const enterWorld = useCallback(() => {
     setSource({ kind: 'world' })
     setTool('orbit')
-    if (worldPreset) applyWorldPreset(worldPreset)
-    else setReplayKey((k) => k + 1)
-    flash('Composing — pick a scene from the gallery, or add objects and backgrounds')
-  }, [flash, worldPreset, applyWorldPreset])
+    setReplayKey((k) => k + 1)
+  }, [])
 
   const onSource = useCallback(
     (next: SourceState) => {
@@ -719,6 +780,44 @@ export function OhMyAsciiStudio() {
     },
     [pushHistory],
   )
+  // Editing a world's modelled object in the modeller: the user's own modeller scene is set aside
+  // and comes back when they save the object (or cancel).
+  const [sculptLink, setSculptLink] = useState<{ id: string; name: string } | null>(null)
+  const stashedSceneRef = useRef<MeshScene | null>(null)
+  const editSculpt = useCallback((id: string) => {
+    const i = worldRef.current.objects.findIndex((o) => o.id === id)
+    const o = worldRef.current.objects[i]
+    if (!o || o.geom.kind !== 'sculpt') return
+    if (!stashedSceneRef.current) stashedSceneRef.current = sceneRef.current
+    sceneRef.current = o.geom.scene
+    setScene(o.geom.scene)
+    setSelected(null)
+    setSculptLink({ id, name: objectLabel(o, i) })
+    setSource({ kind: 'scene' })
+    setReplayKey((k) => k + 1)
+  }, [])
+  const endSculptEdit = useCallback(
+    (save: boolean) => {
+      const link = sculptLink
+      if (!link) return
+      if (save) {
+        const edited = sceneRef.current
+        commitWorld((w) => ({ ...w, objects: w.objects.map((o) => (o.id === link.id ? { ...o, geom: { kind: 'sculpt' as const, scene: edited } } : o)) }), false)
+      }
+      if (stashedSceneRef.current) {
+        sceneRef.current = stashedSceneRef.current
+        setScene(stashedSceneRef.current)
+      }
+      stashedSceneRef.current = null
+      setSculptLink(null)
+      setSelected(null)
+      setWorldSel(link.id)
+      setSource({ kind: 'world' })
+      setReplayKey((k) => k + 1)
+    },
+    [sculptLink, commitWorld],
+  )
+
   const worldSelIndex = source.kind === 'world' ? world.objects.findIndex((o) => o.id === worldSel) : -1
   const pickWorldObject = useCallback((i: number) => setWorldSel(i >= 0 ? (worldRef.current.objects[i]?.id ?? null) : null), [])
 
@@ -841,12 +940,12 @@ export function OhMyAsciiStudio() {
   // pieces play from their file (with --watch, so studio edits show live); the rest via a share link.
   const copyTerminal = useCallback(async () => {
     if (activePiece) {
-      await copy(`ohmyascii play './${activePiece}' --watch`, 'terminal')
+      await copy(`ohmyascii play ${shellQuote(`./${activePiece}`)} --watch`, 'terminal')
       return flash('Terminal command copied — run it in the held folder; edits here reload live')
     }
     if (source.kind === 'upload') return flash('Uploads are not in links — hold a folder (Folder panel) so the piece is saved to a file, then copy again')
-    const url = `${location.origin}${location.pathname}#s=${encodeShare(cfg, source, scene, world)}`
-    await copy(`ohmyascii play '${url}'`, 'terminal')
+    const url = `${location.origin}${location.pathname}#${shareFragment(cfg, source, scene, world)}`
+    await copy(`ohmyascii play ${shellQuote(url)}`, 'terminal')
     flash('Terminal command copied — paste it into a terminal (install: see docs/terminal.md)')
   }, [activePiece, source, cfg, scene, world, copy, flash])
   const diskRef = useRef<string | null>(null)
@@ -1138,17 +1237,13 @@ export function OhMyAsciiStudio() {
             className={NAV_BUTTON}
             onClick={() => {
               meshRef.current?.resetView()
-              commit(() => DEFAULT_CONFIG, false)
+              commit(() => STUDIO_DEFAULTS, false)
               setSource({ kind: 'preset', key: 'starburst' })
               setReplayKey((k) => k + 1)
             }}
           >
             <Undo2 aria-hidden className="size-4 sm:hidden" />
             <span className="max-sm:sr-only">Reset</span>
-          </button>
-          <button type="button" className={NAV_BUTTON} onClick={() => copy(code, 'code')}>
-            <Code2 aria-hidden className="size-4 sm:hidden" />
-            <span className="max-sm:sr-only">{copied === 'code' ? 'Copied' : 'Code'}</span>
           </button>
           <button type="button" className={NAV_BUTTON} onClick={share}>
             <Link2 aria-hidden className="size-4 sm:hidden" />
@@ -1376,6 +1471,7 @@ export function OhMyAsciiStudio() {
                 onAddModelled={addModelled}
                 onImportFile={importWorldFile}
                 onExportJson={exportWorldJson}
+                onEditSculpt={editSculpt}
               />
             }
             modelPanel={
@@ -1384,13 +1480,10 @@ export function OhMyAsciiStudio() {
                 onScene={commitScene}
                 selected={selected}
                 onSelect={setSelected}
-                tool={tool}
-                onTool={pickTool}
-                brush={brush}
-                onBrush={setBrush}
                 onImportFile={importModelFile}
                 onExportJson={exportSceneJson}
                 onExportPly={exportPly}
+                linked={sculptLink ? { name: sculptLink.name, onSave: () => endSculptEdit(true), onCancel: () => endSculptEdit(false) } : undefined}
               />
             }
           />

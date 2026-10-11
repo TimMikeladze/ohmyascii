@@ -141,6 +141,7 @@ export class AsciiRenderer {
 
     if (model.count === 0) {
       this.view.cols = 0
+      this.last = { cols, rows, vis: 0 }
       return { cols, rows, points: 0, glyphs: 0 }
     }
 

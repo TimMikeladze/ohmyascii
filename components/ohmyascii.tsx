@@ -108,6 +108,7 @@ export function OhMyAscii({
   const worldRendererRef = useRef<WorldRenderer | null>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   const [grabbing, setGrabbing] = useState(false)
+  const [focusRing, setFocusRing] = useState(false)
 
   const scene = useMemo<MeshScene | null>(() => {
     if (spec.kind !== 'scene') return null
@@ -118,6 +119,15 @@ export function OhMyAscii({
     if (spec.kind !== 'world') return null
     return 'v' in spec.world ? parseWorld(spec.world) : spec.world
   }, [spec])
+
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+  const invalid = (spec.kind === 'scene' && !scene) || (spec.kind === 'world' && !world)
+  useEffect(() => {
+    if (invalid) onErrorRef.current?.(new Error(`Invalid ${spec.kind} data`))
+  }, [invalid, spec.kind])
+  // Geometry is built for the measured canvas only — not during SSR / before the first layout.
+  const measured = size.w > 0
 
   const isImage = spec.kind !== 'scene' && spec.kind !== 'world'
   const { data: loaded, isValidating } = useSWR(isImage ? ['ascii-source', sourceKey(spec)] : null, () => loadSource(spec as Exclude<SourceSpec, { kind: 'scene' } | { kind: 'world' }>), {
@@ -145,7 +155,7 @@ export function OhMyAscii({
   // Strokes, their undo and shape tweaks are local edits: resample only where the surface changed.
   const geometryRef = useRef<{ scene: MeshScene; res: number; model: SceneModel } | null>(null)
   const sceneGeometry = useMemo(() => {
-    if (!scene) return null
+    if (!scene || !measured) return null
     const prev = geometryRef.current
     let model: SceneModel | null = null
     if (prev && prev.res === res) {
@@ -158,14 +168,14 @@ export function OhMyAscii({
     return model
     // Paint changes must not rebuild geometry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene?.prims, scene?.dabs, scene?.blend, scene?.meshes, res])
+  }, [scene?.prims, scene?.dabs, scene?.blend, scene?.meshes, res, measured])
   const sceneModel = useMemo(
     () => (sceneGeometry && scene ? colorizeModel(sceneGeometry, scene.paint) : null),
     [sceneGeometry, scene],
   )
 
   const worldPx = world ? (Math.min(size.w || 600, size.h || 600) * 0.5 * cfg.zoom * world.camera.zoom) / world.fit : 1
-  const worldBuilt = useWorldBuild(world, worldPx, Math.max(3, cfg.cellSize))
+  const worldBuilt = useWorldBuild(measured ? world : null, worldPx, Math.max(3, cfg.cellSize), (e) => onErrorRef.current?.(e))
 
   const imageModel = useMemo(
     () =>
@@ -325,6 +335,18 @@ export function OhMyAscii({
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(container)
     resize()
+    // Moving to another display or zooming the page changes the pixel ratio without a resize.
+    let dprQuery: MediaQueryList | null = null
+    const watchDpr = () => {
+      dprQuery?.removeEventListener('change', onDpr)
+      dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`)
+      dprQuery.addEventListener('change', onDpr)
+    }
+    const onDpr = () => {
+      resize()
+      watchDpr()
+    }
+    watchDpr()
 
     const intersection = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
@@ -378,7 +400,7 @@ export function OhMyAscii({
       const animated =
         (w !== null && !isPaused && !reducedMotion) ||
         (c.motion !== 'static' && !isPaused && !reducedMotion) ||
-        (!isPaused && (c.waveAmp > 0 || c.shimmer > 0 || c.scanStrength > 0)) ||
+        (!isPaused && !reducedMotion && (c.waveAmp > 0 || c.shimmer > 0 || c.scanStrength > 0)) ||
         introProgress < 1 ||
         user.dragging ||
         moving ||
@@ -414,7 +436,8 @@ export function OhMyAscii({
             rotX: rx,
             rotY: ry,
             rotZ: rz,
-            time: clockRef.current,
+            // Reduced motion also freezes shimmer, wave and scanline effects.
+            time: reducedMotion ? 0 : clockRef.current,
             introProgress,
             pointerX: pointerRef.current.x,
             pointerY: pointerRef.current.y,
@@ -454,6 +477,12 @@ export function OhMyAscii({
       cancelAnimationFrame(raf)
       resizeObserver.disconnect()
       motionQuery.removeEventListener('change', onMotionPref)
+      dprQuery?.removeEventListener('change', onDpr)
+      // Unmounted mid-stroke: close it so the owner's stroke state (and undo step) ends.
+      if (strokeRef.current !== null) {
+        strokeRef.current = null
+        onBrushRef.current?.(null, 'end')
+      }
       intersection.disconnect()
       rendererRef.current = null
       worldRendererRef.current = null
@@ -511,6 +540,8 @@ export function OhMyAscii({
   }
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // Extra fingers during a brush stroke are ignored (they'd turn the stroke into an orbit).
+    if (strokeRef.current !== null) return
     const brushing =
       toolRef.current === 'brush' &&
       strokeRef.current === null &&
@@ -658,6 +689,9 @@ export function OhMyAscii({
         onContextMenu={(e) => tool === 'brush' && e.preventDefault()}
         onDoubleClick={() => tool !== 'brush' && resetView()}
         onKeyDown={onKeyDown}
+        // Keyboard focus gets a visible ring (inline: the component ships without a stylesheet).
+        onFocus={(e) => setFocusRing(e.currentTarget.matches(':focus-visible'))}
+        onBlur={() => setFocusRing(false)}
         tabIndex={cfg.interactive ? 0 : undefined}
         style={{
           position: 'absolute',
@@ -666,7 +700,8 @@ export function OhMyAscii({
           height: '100%',
           touchAction: cfg.interactive || tool === 'brush' ? 'none' : 'auto',
           cursor: tool === 'brush' && !grabbing ? 'crosshair' : cfg.interactive ? (grabbing ? 'grabbing' : 'grab') : 'default',
-          outline: 'none',
+          outline: focusRing ? `1px dashed ${cfg.fg}` : 'none',
+          outlineOffset: -4,
         }}
       />
       <div

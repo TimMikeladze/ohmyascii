@@ -3,7 +3,8 @@ import { claudeArgs, isSessionId, parseClaudeLine } from './claude-cli'
 import { isLocalRequest, isLoopbackHost } from './local'
 import { agentPrompt } from '../ascii/handoff'
 
-const req = (host: string, origin?: string) => new Request('http://x/api', { headers: { host, ...(origin ? { origin } : {}) } })
+const req = (host: string, origin?: string, peer?: string) =>
+  new Request('http://x/api', { headers: { host, ...(origin ? { origin } : {}), ...(peer ? { 'x-forwarded-for': peer } : {}) } })
 
 describe('isLocalRequest', () => {
   it('allows loopback dev requests from the same host only', () => {
@@ -14,6 +15,12 @@ describe('isLocalRequest', () => {
     expect(isLocalRequest(req('localhost:3001'), 'production')).toBe(false)
     expect(isLoopbackHost('[::1]:3000')).toBe(true)
     expect(isLoopbackHost('localhost.evil.com')).toBe(false)
+  })
+
+  it('rejects a forged Host from a LAN peer', () => {
+    expect(isLocalRequest(req('localhost:3000', undefined, '192.168.1.20'), 'development')).toBe(false)
+    expect(isLocalRequest(req('localhost:3000', undefined, '::ffff:127.0.0.1'), 'development')).toBe(true)
+    expect(isLocalRequest(req('localhost:3000', undefined, '::1'), 'development')).toBe(true)
   })
 })
 

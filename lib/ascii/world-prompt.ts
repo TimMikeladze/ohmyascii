@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, type AsciiConfig } from './config'
+import { DEFAULT_CONFIG, sanitizeConfig, type AsciiConfig } from './config'
 import {
   BEHAVIOUR_TYPES,
   CURVE_TYPES,
@@ -125,12 +125,7 @@ export function parseAiReply(text: string): AiReply {
   const d = data as { world?: unknown; config?: unknown; objects?: unknown }
   const worldData = d.world ?? (Array.isArray(d.objects) ? d : null)
   const world = worldData ? parseWorld(worldData) : null
-  const config: Partial<AsciiConfig> = {}
-  if (d.config && typeof d.config === 'object') {
-    for (const k of AI_CONFIG_KEYS) {
-      const v = (d.config as Record<string, unknown>)[k]
-      if (v !== undefined && typeof v === typeof DEFAULT_CONFIG[k] && (typeof v !== 'number' || Number.isFinite(v))) (config as Record<string, unknown>)[k] = v
-    }
-  }
+  const clean = sanitizeConfig(d.config)
+  const config = Object.fromEntries(AI_CONFIG_KEYS.filter((k) => k in clean).map((k) => [k, clean[k]])) as Partial<AsciiConfig>
   return { text: prose, world: world && world.objects.length + world.fields.length > 0 ? world : null, config }
 }

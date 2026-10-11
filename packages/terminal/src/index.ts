@@ -2,7 +2,7 @@
 // as ANSI-coloured text. Node only. See README.md.
 
 export { openPiece, openTerminalPiece, galleryPiece, type OpenedPiece, type OpenTerminalResult } from '../../../lib/ascii/terminal-node'
-export { createTerminalRenderer, cellsToAnsi, detectColorDepth, parseColor, type ColorDepth, type TerminalOptions, type TerminalRenderer } from '../../../lib/ascii/terminal'
+export { createTerminalRenderer, cellsToAnsi, detectColorDepth, frameDiff, parseColor, toAsciicast, truncateAnsi, type ColorDepth, type TerminalOptions, type TerminalRenderer } from '../../../lib/ascii/terminal'
 export { loadPieceAssets, needsAssets } from '../../../lib/ascii/assets'
 export { createHeadlessPlayer, renderHeadless, type HeadlessView } from '../../../lib/ascii/headless'
 export { parsePiece, serializePiece, type Piece } from '../../../lib/ascii/piece'

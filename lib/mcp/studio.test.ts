@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -19,6 +19,39 @@ describe('StudioFiles', () => {
     expect(() => files.writePiece('art/koi.json', galleryPiece('koi'))).toThrow(/\.ascii\.json/)
     expect(() => files.writePiece('bad.ascii.json', '{nope')).toThrow(/Invalid JSON/)
     expect(readFileSync(join(root, 'art/koi.ascii.json'), 'utf8')).toBe(written)
+  })
+
+  it('refuses symlink escapes, dotfiles and non-piece reads', () => {
+    const root = tmp()
+    const outside = tmp()
+    writeFileSync(join(outside, 'evil.ascii.json'), galleryPiece('koi'))
+    writeFileSync(join(root, '.env'), 'SECRET=1')
+    symlinkSync(outside, join(root, 'link'))
+    symlinkSync(join(outside, 'evil.ascii.json'), join(root, 'out.ascii.json'))
+    symlinkSync(join(outside, 'nope'), join(root, 'dangling.ascii.json'))
+    const files = new StudioFiles(root)
+    files.writePiece('good.ascii.json', galleryPiece('koi'))
+    expect(() => files.readPiece('link/evil.ascii.json')).toThrow(/escapes/)
+    expect(() => files.writePiece('link/new.ascii.json', galleryPiece('koi'))).toThrow(/escapes/)
+    expect(() => files.writePiece('dangling.ascii.json', galleryPiece('koi'))).toThrow(/broken link/)
+    expect(() => files.readPiece('.env')).toThrow(/\.ascii\.json/)
+    expect(() => files.readPiece('.hidden/x.ascii.json')).toThrow(/Hidden/)
+    // Bad entries are reported; the rest still list.
+    const listed = files.listPieces()
+    expect(listed.map((p) => [p.path, !!p.error])).toEqual([
+      ['dangling.ascii.json', true],
+      ['good.ascii.json', false],
+      ['out.ascii.json', true],
+    ])
+  })
+
+  it('confines piece images to the root and blocks remote images by default', async () => {
+    const root = tmp()
+    mkdirSync(join(root, 'art'))
+    const files = new StudioFiles(root)
+    const image = (path: string) => JSON.stringify({ source: { kind: 'image', path } })
+    for (const path of ['/etc/hosts', '../x.png', 'file:///etc/hosts']) await expect(files.renderPiece(image(path), { times: [0] })).rejects.toThrow(/studio folder/)
+    await expect(files.renderPiece(image('https://example.com/a.png'), { times: [0] })).rejects.toThrow(/Remote images/)
   })
 })
 
