@@ -2,13 +2,64 @@
 
 Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint yourself, or a whole animated 2D / 3D scene you compose (or describe to an AI) — into a rotatable, animated ASCII render. The home page is a chat: describe a scene and watch it render live, then continue in the studio. Ships as a studio app and as shadcn registry items.
 
-## Run
+## Get started
+
+### Try it in your browser
+
+1. [Open the koi pond](https://ohmyascii.vercel.app/studio#w=koi). No installation or AI credentials needed.
+2. Change colours, light and motion in the side panel.
+3. Choose **Export → Share link** or **PNG** to keep your creation.
+
+### Create with Claude Code or Codex
+
+1. Run this in the project where you want to create animations, then select your agent:
+
+   ```bash
+   bunx skills add TimMikeladze/ohmyascii --skill ohmyascii
+   ```
+
+   Using npm instead? Run `npx skills add TimMikeladze/ohmyascii --skill ohmyascii`. Add `-g` to make the skill available across projects.
+
+2. Ask your agent to create a piece:
+
+   ```text
+   # Claude Code
+   /ohmyascii Create a moonlit koi pond in ascii/pond.ascii.json
+
+   # Codex
+   $ohmyascii Create a moonlit koi pond in ascii/pond.ascii.json
+   ```
+
+3. Open the [studio](https://ohmyascii.vercel.app/studio) in desktop Chrome or Edge. Under **Folder (agents) → Open folder**, choose the `ascii` output folder and select `pond.ascii.json`. Your agent's edits appear live; studio edits save back to the same file.
+
+The skill installs instructions, templates and a preview helper. Agent-rendered previews also need a [local renderer checkout](#run-locally), a configured [MCP server](docs/local-claude.md), or an installed terminal CLI. The browser studio can preview the saved piece without local renderer setup. See [skill installation](#install-the-skill-in-another-project) for details.
+
+### Add ASCII to your React app
+
+Run this in your shadcn project:
+
+```bash
+npx shadcn@latest add https://ohmyascii.vercel.app/r/ohmyascii.json
+```
+
+Create a scene in the studio, choose **Export → React code**, and paste it into your app. See [component usage](#use) and [full editor installation](#install-with-the-shadcn-cli).
+
+## Run locally
+
+Install [Bun](https://bun.sh), then clone the renderer checkout:
+
+```bash
+git clone https://github.com/TimMikeladze/ohmyascii.git
+cd ohmyascii
+```
 
 ```bash
 bun install
 bun run dev            # binds 127.0.0.1; pass -p <port> if 3000 is taken (bun run dev:lan to reach it from other devices)
 bun run test           # vitest: modelling, worlds (animation, geometry, fields, renderer), AI reply parsing
 ```
+
+Open `http://localhost:3000`. Gallery scenes and manual editing work immediately. For local AI generation, install and log in to Claude Code, or configure AI Gateway as described below. `bun install` also installs the `ohmyascii` skill for agents working in this checkout.
 
 ## The site
 
@@ -173,6 +224,16 @@ bun run tsx skills/ohmyascii/scripts/inspect.ts ascii/moon-pond.ascii.json --col
 Set dimensions to the actual delivery size; terminal cells usually need `--aspect 2`. The example samples a 12-second interval: adjust `--times` to your piece's intended duration. Compare both endpoints and adjacent frames around the seam before claiming a seamless loop. Headless previews disable intro, shimmer and grid dots, and fonts may differ from the browser; check those effects in the studio when they matter.
 
 ### Install the skill in another project
+
+Use the [skills.sh CLI](https://github.com/vercel-labs/skills#install-a-skill) from your target project:
+
+```bash
+bunx skills add TimMikeladze/ohmyascii --skill ohmyascii
+```
+
+Select Claude Code or Codex when prompted. Add `-g` for all projects, or use `npx` in place of `bunx`. Invoke `/ohmyascii` in Claude Code or `$ohmyascii` in Codex. The `/ascii` shortcut is included in this checkout; a skills.sh install uses `/ohmyascii`.
+
+For manual installation:
 
 Copy the **complete** `skills/ohmyascii` directory, including references, scripts, metadata and templates, into the target project's `.claude/skills/` for Claude Code or `.agents/skills/` for Codex. For Claude's short `/ascii` alias, also copy `.claude/commands/ascii.md` into the target project's `.claude/commands/`. The installed skill itself is available as `/ohmyascii` in Claude Code and `$ohmyascii` in Codex. The Claude command file does not add a Codex slash command.
 

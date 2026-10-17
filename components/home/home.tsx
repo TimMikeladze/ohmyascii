@@ -8,6 +8,7 @@ import { OhMyAscii } from '@/components/ohmyascii'
 import { getSourcePresets } from '@/lib/ascii/presets'
 import { cn } from '@/lib/utils'
 import { Gallery } from './gallery'
+import { GetStarted } from './get-started'
 
 // The site's chat-first landing. The composer is a launcher: submitting a prompt opens the studio
 // with `?q=<prompt>`, where the Generate with AI panel starts building the scene and the
@@ -104,7 +105,8 @@ export function Home() {
         >
           ohmyascii
         </Link>
-        <nav aria-label="Site">
+        <nav aria-label="Site" className="flex items-center">
+          <a href="#get-started" className={LINK_BUTTON}>Get started</a>
           <Link href="/studio" className={LINK_BUTTON}>
             Studio
             <ArrowRight className="size-3.5" aria-hidden />
@@ -195,6 +197,8 @@ export function Home() {
         </div>
         {engineNote && <p className="text-[11px] leading-relaxed text-muted-foreground">{engineNote}</p>}
       </section>
+
+      <GetStarted />
 
       <Gallery />
 

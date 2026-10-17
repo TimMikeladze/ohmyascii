@@ -19,8 +19,9 @@ export function FolderPanel({ folder, active, onOpen, onNew }: FolderPanelProps)
     return (
       <div className="flex flex-col gap-3">
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Hold a folder on disk. <code>*.ascii.json</code> pieces in it render here live as an agent (or you) edits them; studio edits save back, and the rendered frame is written next to each piece as <code>.frame.txt</code>.
+          Open the folder where your agent saves pieces. <code>*.ascii.json</code> pieces in it render here live as an agent (or you) edits them; studio edits save back, and the rendered frame is written next to each piece as <code>.frame.txt</code>.
         </p>
+        <a href="https://ohmyascii.vercel.app/#get-started" target="_blank" rel="noreferrer" className="text-xs underline underline-offset-4">Install the ohmyascii skill and create your first piece</a>
         {folder.pending ? (
           <button type="button" className={BUTTON} onClick={folder.reconnect}>
             <FolderOpen aria-hidden className="size-3.5" /> Reconnect {folder.pending}
