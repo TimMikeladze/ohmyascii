@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "name": "Kinetic type starter",
+  "source": {
+    "kind": "text",
+    "text": "FLOW",
+    "fontKey": "system",
+    "weight": 900
+  },
+  "config": {
+    "bg": "#11152a",
+    "fg": "#f4e1c2",
+    "fg2": "#656f9a",
+    "charset": ".:-=+*#%@",
+    "colorMode": "mono",
+    "thickness": 0.08,
+    "motion": "sway",
+    "rotX": 0,
+    "rotY": 0,
+    "rotZ": 0,
+    "swayX": 2,
+    "swayY": 8,
+    "swaySpeed": 0.5,
+    "ambient": 0.55,
+    "zoom": 1.15,
+    "gridDots": false,
+    "intro": 0,
+    "shimmer": 0,
+    "brightness": 0.15
+  }
+}

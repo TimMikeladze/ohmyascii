@@ -1,0 +1,233 @@
+{
+  "v": 1,
+  "name": "Staged Action starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Staged Action starter",
+      "duration": 6,
+      "fit": 0.95,
+      "camera": {
+        "rot": [
+          0,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0.3,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": []
+      },
+      "fields": [
+        {
+          "type": "stars",
+          "layer": "back",
+          "charset": " .\u00b7+*",
+          "colors": [
+            "#1a2a4a",
+            "#ffffff"
+          ],
+          "scale": 1.2,
+          "speed": 2,
+          "intensity": 1,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "cylinder"
+          },
+          "pos": [
+            0,
+            0.1,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.16,
+            0.7,
+            0.16
+          ],
+          "color": "#e8ecf4",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "bob",
+              "axis": "y",
+              "amp": 0.03,
+              "speed": 2,
+              "phase": 0
+            },
+            {
+              "type": "spin",
+              "axis": "y",
+              "speed": 40
+            }
+          ],
+          "name": "Body",
+          "shadow": "#2a3040",
+          "charset": ".:-=+*#"
+        },
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "cone"
+          },
+          "pos": [
+            0,
+            0.54,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.16,
+            0.22,
+            0.16
+          ],
+          "color": "#e84a3a",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "bob",
+              "axis": "y",
+              "amp": 0.03,
+              "speed": 2,
+              "phase": 0
+            }
+          ],
+          "name": "Nose",
+          "shadow": "#3a0a08",
+          "charset": "=+#"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "triangle",
+            "sides": 5,
+            "inner": 0.5,
+            "round": 0,
+            "bevel": 0,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            -0.22,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.42,
+            0.22,
+            1
+          ],
+          "color": "#e84a3a",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "bob",
+              "axis": "y",
+              "amp": 0.03,
+              "speed": 2,
+              "phase": 0
+            }
+          ],
+          "name": "Fins",
+          "shadow": "#3a0a08",
+          "charset": "=+#"
+        },
+        {
+          "geom": {
+            "kind": "particles",
+            "type": "embers",
+            "count": 900,
+            "speed": -3,
+            "seed": 2
+          },
+          "pos": [
+            0,
+            -0.75,
+            0
+          ],
+          "rot": [
+            180,
+            0,
+            0
+          ],
+          "scale": [
+            0.3,
+            0.8,
+            0.3
+          ],
+          "color": "#ffe08a",
+          "emissive": 1,
+          "anim": [],
+          "name": "Exhaust",
+          "shadow": "#ff3a10",
+          "charset": ".:*#@"
+        },
+        {
+          "geom": {
+            "kind": "particles",
+            "type": "dust",
+            "count": 500,
+            "speed": 1.2,
+            "seed": 4
+          },
+          "pos": [
+            0,
+            -1.05,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1.6,
+            0.3,
+            0.8
+          ],
+          "color": "#8a8a9a",
+          "emissive": 1,
+          "anim": [],
+          "name": "Smoke",
+          "shadow": "#2a2a3a",
+          "charset": " .\u00b7:"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "bg": "#04060e",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.3,
+    "lightAzimuth": 50,
+    "lightElevation": 20,
+    "depthFade": 0.15,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "v": 1,
+  "name": "Radial Ornament starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Radial Ornament starter",
+      "duration": 20,
+      "fit": 1.4,
+      "camera": {
+        "rot": [
+          0,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": [
+          {
+            "type": "pulse",
+            "amp": 0.03,
+            "speed": 0.1,
+            "phase": 0
+          }
+        ]
+      },
+      "fields": [
+        {
+          "type": "rings",
+          "layer": "back",
+          "charset": " .\u00b7",
+          "colors": [
+            "#0a0618",
+            "#2a1450",
+            "#4a2a80"
+          ],
+          "scale": 0.8,
+          "speed": 0.4,
+          "intensity": 0.7,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "petal",
+            "sides": 5,
+            "inner": 0.62,
+            "round": 0,
+            "bevel": 0.35,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.34,
+            0.5,
+            1
+          ],
+          "color": "#2fd6c4",
+          "emissive": 0,
+          "anim": [],
+          "name": "Outer petals",
+          "shadow": "#04201e",
+          "array": {
+            "count": 16,
+            "offset": [
+              0,
+              0.82,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              22.5
+            ],
+            "grow": 1,
+            "spin": 3,
+            "phase": 0
+          }
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "petal",
+            "sides": 5,
+            "inner": 0.66,
+            "round": 0,
+            "bevel": 0.35,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.3,
+            0.42,
+            1
+          ],
+          "color": "#ff5fa2",
+          "emissive": 0,
+          "anim": [],
+          "name": "Middle petals",
+          "shadow": "#2a0418",
+          "array": {
+            "count": 12,
+            "offset": [
+              0,
+              0.5,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              30
+            ],
+            "grow": 1,
+            "spin": -5,
+            "phase": 0
+          }
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "petal",
+            "sides": 5,
+            "inner": 0.7,
+            "round": 0,
+            "bevel": 0.35,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.24,
+            0.3,
+            1
+          ],
+          "color": "#ffd166",
+          "emissive": 0,
+          "anim": [],
+          "name": "Inner petals",
+          "shadow": "#2a1a00",
+          "array": {
+            "count": 8,
+            "offset": [
+              0,
+              0.25,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              45
+            ],
+            "grow": 1,
+            "spin": 8,
+            "phase": 0
+          }
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "star",
+            "sides": 8,
+            "inner": 0.35,
+            "round": 0,
+            "bevel": 0.3,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.3,
+            0.3,
+            0.3
+          ],
+          "color": "#fff5d6",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "spin",
+              "axis": "z",
+              "speed": -12
+            },
+            {
+              "type": "pulse",
+              "amp": 0.08,
+              "speed": 0.5,
+              "phase": 0
+            }
+          ],
+          "name": "Heart star",
+          "shadow": "#5a3a00"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "circle",
+            "sides": 5,
+            "inner": 0.5,
+            "round": 0,
+            "bevel": 0.5,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.07,
+            0.07,
+            0.07
+          ],
+          "color": "#e6d9ff",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "pulse",
+              "amp": 0.6,
+              "speed": 0.5,
+              "phase": 0
+            }
+          ],
+          "name": "Beads",
+          "shadow": "#2a1a4a",
+          "array": {
+            "count": 32,
+            "offset": [
+              0,
+              1.18,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              11.25
+            ],
+            "grow": 1,
+            "spin": -2,
+            "phase": 0.08
+          }
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "bg": "#0a0618",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.3,
+    "lightAzimuth": -30,
+    "lightElevation": 45,
+    "depthFade": 0,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}

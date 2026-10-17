@@ -1,0 +1,653 @@
+{
+  "v": 1,
+  "name": "Creature Habitat starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Creature Habitat starter",
+      "duration": 18,
+      "fit": 1.05,
+      "camera": {
+        "rot": [
+          0,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": []
+      },
+      "fields": [
+        {
+          "type": "ripples",
+          "layer": "back",
+          "charset": " .\u00b7~-",
+          "colors": [
+            "#03141a",
+            "#0b3d45",
+            "#3d9c95"
+          ],
+          "scale": 0.9,
+          "speed": 0.7,
+          "intensity": 0.9,
+          "angle": 90,
+          "seed": 3
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "sculpt",
+            "scene": {
+              "v": 1,
+              "prims": [
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0,
+                    0.02,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.36,
+                    0.9,
+                    0.3
+                  ],
+                  "color": "#ff7a2e"
+                },
+                {
+                  "type": "cone",
+                  "op": "add",
+                  "pos": [
+                    0,
+                    -0.55,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    180
+                  ],
+                  "scale": [
+                    0.34,
+                    0.32,
+                    0.12
+                  ],
+                  "color": "#ff7a2e"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0.02,
+                    0.18,
+                    0.1
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.2,
+                    0.24,
+                    0.14
+                  ],
+                  "color": "#fff4e6"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    -0.06,
+                    -0.12,
+                    0.09
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.16,
+                    0.2,
+                    0.12
+                  ],
+                  "color": "#fff4e6"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0.2,
+                    0.12,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    -40
+                  ],
+                  "scale": [
+                    0.22,
+                    0.1,
+                    0.05
+                  ],
+                  "color": "#ff7a2e"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    -0.2,
+                    0.12,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    40
+                  ],
+                  "scale": [
+                    0.22,
+                    0.1,
+                    0.05
+                  ],
+                  "color": "#ff7a2e"
+                }
+              ],
+              "dabs": [],
+              "blend": 0.08,
+              "paint": {},
+              "meshes": {}
+            }
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.62,
+            0.62,
+            0.62
+          ],
+          "color": "#e4e4e4",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "orbit",
+              "radius": 0.68,
+              "speed": 20,
+              "tilt": 0,
+              "phase": 0,
+              "plane": "xy"
+            },
+            {
+              "type": "spin",
+              "axis": "z",
+              "speed": 20
+            },
+            {
+              "type": "wave",
+              "axis": "x",
+              "amp": 0.05,
+              "freq": 7,
+              "speed": 1.2
+            }
+          ],
+          "name": "Kohaku",
+          "source": true
+        },
+        {
+          "geom": {
+            "kind": "sculpt",
+            "scene": {
+              "v": 1,
+              "prims": [
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0,
+                    0.02,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.36,
+                    0.9,
+                    0.3
+                  ],
+                  "color": "#f2f2f2"
+                },
+                {
+                  "type": "cone",
+                  "op": "add",
+                  "pos": [
+                    0,
+                    -0.55,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    180
+                  ],
+                  "scale": [
+                    0.34,
+                    0.32,
+                    0.12
+                  ],
+                  "color": "#f2f2f2"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0.02,
+                    0.18,
+                    0.1
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.2,
+                    0.24,
+                    0.14
+                  ],
+                  "color": "#1a1a1a"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    -0.06,
+                    -0.12,
+                    0.09
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.16,
+                    0.2,
+                    0.12
+                  ],
+                  "color": "#1a1a1a"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    0.2,
+                    0.12,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    -40
+                  ],
+                  "scale": [
+                    0.22,
+                    0.1,
+                    0.05
+                  ],
+                  "color": "#f2f2f2"
+                },
+                {
+                  "type": "sphere",
+                  "op": "add",
+                  "pos": [
+                    -0.2,
+                    0.12,
+                    0
+                  ],
+                  "rot": [
+                    0,
+                    0,
+                    40
+                  ],
+                  "scale": [
+                    0.22,
+                    0.1,
+                    0.05
+                  ],
+                  "color": "#f2f2f2"
+                }
+              ],
+              "dabs": [],
+              "blend": 0.08,
+              "paint": {},
+              "meshes": {}
+            }
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            180
+          ],
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "color": "#e4e4e4",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "orbit",
+              "radius": 0.4,
+              "speed": -40,
+              "tilt": 0,
+              "phase": 140,
+              "plane": "xy"
+            },
+            {
+              "type": "spin",
+              "axis": "z",
+              "speed": -40
+            },
+            {
+              "type": "wave",
+              "axis": "x",
+              "amp": 0.05,
+              "freq": 7,
+              "speed": 1.4
+            }
+          ],
+          "name": "Utsuri",
+          "source": true
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "moon",
+            "sides": 5,
+            "inner": 0.1,
+            "round": 0,
+            "bevel": 0.15,
+            "depth": 0
+          },
+          "pos": [
+            0.95,
+            0.55,
+            0.1
+          ],
+          "rot": [
+            0,
+            0,
+            30
+          ],
+          "scale": [
+            0.42,
+            0.42,
+            0.42
+          ],
+          "color": "#7fc46a",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "sway",
+              "axis": "z",
+              "amp": 6,
+              "speed": 0.1111111111111111,
+              "phase": 0
+            }
+          ],
+          "name": "Lily pad",
+          "shadow": "#0c2a14"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "moon",
+            "sides": 5,
+            "inner": 0.1,
+            "round": 0,
+            "bevel": 0.15,
+            "depth": 0
+          },
+          "pos": [
+            -1.05,
+            -0.5,
+            0.1
+          ],
+          "rot": [
+            0,
+            0,
+            200
+          ],
+          "scale": [
+            0.34,
+            0.34,
+            0.34
+          ],
+          "color": "#6bb35a",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "sway",
+              "axis": "z",
+              "amp": 8,
+              "speed": 0.16666666666666666,
+              "phase": 0
+            }
+          ],
+          "name": "Lily pad 2",
+          "shadow": "#0c2a14"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "circle",
+            "sides": 5,
+            "inner": 0.5,
+            "round": 0,
+            "bevel": 0.2,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0.05
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "color": "#5aa651",
+          "emissive": 0,
+          "anim": [],
+          "name": "Lotus pad",
+          "shadow": "#0c2a14"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "petal",
+            "sides": 5,
+            "inner": 0.42,
+            "round": 0,
+            "bevel": 0.2,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0.15
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.26,
+            0.26,
+            0.26
+          ],
+          "color": "#ffc2dc",
+          "emissive": 0,
+          "anim": [],
+          "name": "Lotus outer",
+          "shadow": "#5a1e3c",
+          "array": {
+            "count": 8,
+            "offset": [
+              0,
+              0.12,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              45
+            ],
+            "grow": 1,
+            "spin": 6,
+            "phase": 0
+          }
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "petal",
+            "sides": 5,
+            "inner": 0.42,
+            "round": 0,
+            "bevel": 0.2,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0.2
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.17,
+            0.17,
+            0.17
+          ],
+          "color": "#fff0f6",
+          "emissive": 0,
+          "anim": [],
+          "name": "Lotus inner",
+          "shadow": "#7a2a52",
+          "array": {
+            "count": 6,
+            "offset": [
+              0,
+              0.07,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              60
+            ],
+            "grow": 1,
+            "spin": -9,
+            "phase": 0
+          }
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "circle",
+            "sides": 5,
+            "inner": 0.5,
+            "round": 0,
+            "bevel": 0.5,
+            "depth": 0
+          },
+          "pos": [
+            0,
+            0,
+            0.25
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.07,
+            0.07,
+            0.07
+          ],
+          "color": "#ffd84a",
+          "emissive": 0,
+          "anim": [],
+          "name": "Heart",
+          "shadow": "#6a4a00"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "bg": "#03141a",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.25,
+    "lightAzimuth": -40,
+    "lightElevation": 50,
+    "depthFade": 0,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}

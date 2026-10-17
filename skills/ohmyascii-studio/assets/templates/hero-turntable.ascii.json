@@ -1,0 +1,70 @@
+{
+  "v": 1,
+  "name": "Sculpted subject starter",
+  "source": {
+    "kind": "scene",
+    "scene": {
+      "v": 1,
+      "blend": 0.06,
+      "prims": [
+        {
+          "type": "torus",
+          "op": "add",
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            35,
+            0,
+            20
+          ],
+          "scale": [
+            0.95,
+            0.95,
+            0.95
+          ],
+          "color": "#68cbbf"
+        },
+        {
+          "type": "sphere",
+          "op": "add",
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.3,
+            0.3,
+            0.3
+          ],
+          "color": "#f8dda5"
+        }
+      ],
+      "dabs": []
+    }
+  },
+  "config": {
+    "bg": "#07151d",
+    "charset": " .:-=+*#%@",
+    "colorMode": "source",
+    "ambient": 0.3,
+    "motion": "spin",
+    "rotX": -15,
+    "rotY": 20,
+    "rotZ": 0,
+    "spinX": 0,
+    "spinY": 30,
+    "spinZ": 0,
+    "gridDots": false,
+    "intro": 0,
+    "shimmer": 0
+  }
+}

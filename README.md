@@ -113,7 +113,85 @@ The studio can hold a folder on disk (Folder → **Open folder**, desktop Chrome
 
 **MCP server** — `.mcp.json` registers `ohmyascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of any piece at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
 
-The `ohmyascii-studio` skill (`skills/ohmyascii-studio/SKILL.md`) teaches agents the format, every config key and scene modelling. `pnpm install` mirrors `skills/` into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`). Details: `docs/studio-folder.md`.
+The [ohmyascii-studio skill](skills/ohmyascii-studio/SKILL.md) teaches agents to interpret a brief, art-direct a scene, build recognizable creatures, choreograph motion, and inspect real previews. Its references cover all 36 gallery worlds, a detailed koi-pond construction study, material glyphs, palettes, the complete piece/config format, and exact loop timing. `pnpm install` mirrors the full skill into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`).
+
+```text
+# Claude Code — short command, or /ohmyascii-studio
+/ascii two koi circling a lotus, ink-blue water, jade and ivory, intricate and calm
+
+# Codex
+$ohmyascii-studio Create a moonlit ASCII aquarium for an 80×24 terminal in ascii/aquarium.ascii.json
+```
+
+### Animation patterns and JSON starters
+
+Choose a [pattern](skills/ohmyascii-studio/references/patterns.md) by its overall composition and motion. Each recipe includes customization parameters, supported construction techniques, small-terminal adjustments and visual checks. Name a pattern in your prompt or let the agent choose from your description.
+
+The JSON starters are complete editable animation files, not prompt snippets. Copy one into your output folder and change its subject, palette, geometry and choreography. The bundled templates stay unchanged.
+
+| Pattern / starter | Starting animation |
+|---|---|
+| [Hero turntable](skills/ohmyascii-studio/assets/templates/hero-turntable.ascii.json) | A rotating teal sculpture with a warm center; adapt to a model, logo or supplied image |
+| [Kinetic type](skills/ohmyascii-studio/assets/templates/kinetic-type.ascii.json) | Gently rocking “FLOW” lettering |
+| [Creature habitat](skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json) | Two koi circling a layered lotus on rippling water |
+| [Scenic diorama](skills/ohmyascii-studio/assets/templates/scenic-diorama.ascii.json) | Desert dunes, crescent moon and cactus |
+| [Radial ornament](skills/ohmyascii-studio/assets/templates/radial-ornament.ascii.json) | Counter-rotating lotus rings and a pulsing bead halo |
+| [Orbital system](skills/ohmyascii-studio/assets/templates/orbital-system.ascii.json) | Moving electrons around a nucleus |
+| [Particle volume](skills/ohmyascii-studio/assets/templates/particle-volume.ascii.json) | A galaxy with 1,200 seeded particles |
+| [Generative field](skills/ohmyascii-studio/assets/templates/generative-field.ascii.json) | Flowing lava-lamp forms with rising particles |
+| [Flight tunnel](skills/ohmyascii-studio/assets/templates/flight-tunnel.ascii.json) | Neon rings and streaks suggesting forward travel |
+| [Staged action](skills/ohmyascii-studio/assets/templates/staged-action.ascii.json) | A rocket with animated exhaust; adapt with keyframes for ordered poses |
+
+Preview a bundled starter immediately:
+
+```bash
+pnpm cli skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json
+```
+
+Start your own piece (choose a new filename if the destination already exists):
+
+```bash
+mkdir -p ascii
+cp -n skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json ascii/moon-pond.ascii.json
+pnpm cli ascii/moon-pond.ascii.json --watch
+```
+
+Edit the copied JSON yourself, or ask `/ascii` / `$ohmyascii-studio` to personalize that file. It remains editable in the studio. Templates derived from the gallery retain ambient choreography: their `duration` is a recording interval, **not a guarantee of seamless looping**. Exact loops need every moving channel checked, including the camera, fields and particles.
+
+### Preview and validate without a browser
+
+The bundled helper works with the checkout's installed dependencies, without MCP or an open studio:
+
+```bash
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts --list
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/moon-pond-preview
+```
+
+`--list` lists gallery keys; `--json` exports a complete normalized piece. The preview command reports parser repairs, warnings and missing assets, and saves `frames.txt`, `contact-sheet.png`, and `report.json`. It never rewrites the input piece. Without `--out`, it prints the report and text frames. Run `--help` for all options.
+
+Set dimensions to the actual delivery size; terminal cells usually need `--aspect 2`. The example samples a 12-second interval: adjust `--times` to your piece's intended duration. Compare both endpoints and adjacent frames around the seam before claiming a seamless loop. Headless previews disable intro, shimmer and grid dots, and fonts may differ from the browser; check those effects in the studio when they matter.
+
+### Install the skill in another project
+
+Copy the **complete** `skills/ohmyascii-studio` directory, including references, scripts, metadata and templates, into the target project's `.claude/skills/` for Claude Code or `.agents/skills/` for Codex. For Claude's short `/ascii` alias, also copy `.claude/commands/ascii.md` into the target project's `.claude/commands/`. The installed skill itself is available as `/ohmyascii-studio` in Claude Code and `$ohmyascii-studio` in Codex. The Claude command file does not add a Codex slash command.
+
+The skill does not bundle the renderer or its Node dependencies. Use a configured ohmyascii MCP server, an installed terminal CLI, or the renderer checkout. If the helper is installed elsewhere, run it with the checkout's `pnpm exec tsx` and pass `--repo /path/to/ohmyascii`; input and output paths still resolve from your shell's working directory. See [delivery and installation](skills/ohmyascii-studio/references/delivery.md) for details.
+
+The source of truth stays in `skills/`; `pnpm skills:sync` replaces the local `.claude/skills/` and `.agents/skills/` mirrors. Edit the source rather than a mirror. Most starters use native geometry; if you adapt one to a supplied image, deliver that asset beside the piece using its relative path.
+
+### Skill reference guide
+
+| Reference | Covers |
+|---|---|
+| [Art direction and koi study](skills/ohmyascii-studio/references/art-direction.md) | Intent, composition, anatomy, layered detail, palettes and material glyphs |
+| [Patterns and starters](skills/ohmyascii-studio/references/patterns.md) | Ten animation types, adaptation recipes, pattern combinations and supported capability boundaries |
+| [Gallery atlas](skills/ohmyascii-studio/references/gallery.md) | Construction techniques from all 36 curated worlds |
+| [Piece and configuration format](skills/ohmyascii-studio/references/format.md) | All source kinds, geometry, behaviors, fields, configuration keys and budgets |
+| [Motion and verification](skills/ohmyascii-studio/references/motion-and-verification.md) | Timing units, exact-loop conditions, seam checks and troubleshooting |
+| [Delivery](skills/ohmyascii-studio/references/delivery.md) | Claude/Codex invocation, installation, assets, studio feedback and export |
+
+See [folder mode](docs/studio-folder.md) for the studio's file feedback loop. The skill tests validate reference paths and JSON examples, render every starter at terminal size, and exercise helper exports, diagnostics, colored previews and installation outside the checkout.
 
 ## Terminal
 

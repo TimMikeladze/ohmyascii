@@ -1,0 +1,165 @@
+{
+  "v": 1,
+  "name": "Flight Tunnel starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Flight Tunnel starter",
+      "duration": 8,
+      "fit": 1,
+      "camera": {
+        "rot": [
+          0,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0.75,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": [
+          {
+            "type": "sway",
+            "axis": "z",
+            "amp": 12,
+            "speed": 0.125,
+            "phase": 0
+          },
+          {
+            "type": "sway",
+            "axis": "y",
+            "amp": 4,
+            "speed": 0.125,
+            "phase": 0.25
+          }
+        ]
+      },
+      "fields": [
+        {
+          "type": "tunnel",
+          "layer": "back",
+          "charset": " .\u00b7:-=+",
+          "colors": [
+            "#000005",
+            "#2a1170",
+            "#7af0ff"
+          ],
+          "scale": 1,
+          "speed": 1,
+          "intensity": 1,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "curve",
+            "type": "circle",
+            "turns": 3,
+            "p": 2,
+            "q": 3,
+            "tube": 0.025
+          },
+          "pos": [
+            0,
+            0,
+            -1.2
+          ],
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "scale": [
+            2,
+            2,
+            2
+          ],
+          "color": "#ff5ad1",
+          "emissive": 0,
+          "anim": [
+            {
+              "type": "drift",
+              "vel": [
+                0,
+                0,
+                1.2
+              ],
+              "wrap": 2.4
+            }
+          ],
+          "name": "Rings",
+          "shadow": "#1a0030",
+          "array": {
+            "count": 6,
+            "offset": [
+              0,
+              0,
+              0
+            ],
+            "step": [
+              0,
+              0,
+              0
+            ],
+            "rot": [
+              0,
+              0,
+              0
+            ],
+            "grow": 1,
+            "spin": 0,
+            "phase": 0.6666666666666666
+          }
+        },
+        {
+          "geom": {
+            "kind": "particles",
+            "type": "rain",
+            "count": 500,
+            "speed": -3,
+            "seed": 2
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            90,
+            0,
+            0
+          ],
+          "scale": [
+            2.6,
+            6,
+            2.6
+          ],
+          "color": "#c9f6ff",
+          "emissive": 1,
+          "anim": [],
+          "name": "Streaks",
+          "shadow": "#0a1a40",
+          "charset": " .\u00b7-"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "bg": "#000005",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.2,
+    "lightAzimuth": 0,
+    "lightElevation": 0,
+    "depthFade": 0.6,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}

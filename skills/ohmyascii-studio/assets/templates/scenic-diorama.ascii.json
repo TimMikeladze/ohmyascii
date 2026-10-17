@@ -1,0 +1,226 @@
+{
+  "v": 1,
+  "name": "Scenic Diorama starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Scenic Diorama starter",
+      "duration": 20,
+      "fit": 1.3,
+      "camera": {
+        "rot": [
+          -8,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0.3,
+        "pan": [
+          0,
+          0.1
+        ],
+        "anim": [
+          {
+            "type": "sway",
+            "axis": "y",
+            "amp": 8,
+            "speed": 0.05,
+            "phase": 0
+          }
+        ]
+      },
+      "fields": [
+        {
+          "type": "gradient",
+          "layer": "back",
+          "charset": " .\u00b7",
+          "colors": [
+            "#060714",
+            "#141a3a",
+            "#2a2a5a"
+          ],
+          "scale": 0.9,
+          "speed": 1,
+          "intensity": 0.5,
+          "angle": 90,
+          "seed": 1
+        },
+        {
+          "type": "stars",
+          "layer": "back",
+          "charset": " .\u00b7+*",
+          "colors": [
+            "#2a2a4a",
+            "#fff4e0"
+          ],
+          "scale": 1.1,
+          "speed": 1,
+          "intensity": 1,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "terrain",
+            "type": "dunes",
+            "amp": 0.18,
+            "freq": 2.2,
+            "speed": 0.15,
+            "seed": 8
+          },
+          "pos": [
+            0,
+            -0.55,
+            -0.4
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            7,
+            1,
+            3.4
+          ],
+          "color": "#e0b07a",
+          "emissive": 0,
+          "anim": [],
+          "name": "Dunes",
+          "shadow": "#2a1a24",
+          "tint": "height",
+          "charset": " .\u00b7:-=+"
+        },
+        {
+          "geom": {
+            "kind": "flat",
+            "type": "moon",
+            "sides": 5,
+            "inner": 0.5,
+            "round": 0,
+            "bevel": 0,
+            "depth": 0
+          },
+          "pos": [
+            -0.8,
+            0.62,
+            -2.4
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "color": "#fff4d0",
+          "emissive": 1,
+          "anim": [],
+          "name": "Moon",
+          "shadow": "#c0a060",
+          "charset": "#%@"
+        },
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "cylinder"
+          },
+          "pos": [
+            0.7,
+            -0.18,
+            0.4
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.09,
+            0.55,
+            0.09
+          ],
+          "color": "#4aa06a",
+          "emissive": 0,
+          "anim": [],
+          "name": "Cactus",
+          "shadow": "#0a2a14",
+          "charset": ":;+#"
+        },
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "cylinder"
+          },
+          "pos": [
+            0.82,
+            -0.02,
+            0.4
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.06,
+            0.22,
+            0.06
+          ],
+          "color": "#4aa06a",
+          "emissive": 0,
+          "anim": [],
+          "name": "Arm",
+          "shadow": "#0a2a14",
+          "charset": ":;+#"
+        },
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "cylinder"
+          },
+          "pos": [
+            0.59,
+            -0.1,
+            0.4
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.06,
+            0.16,
+            0.06
+          ],
+          "color": "#4aa06a",
+          "emissive": 0,
+          "anim": [],
+          "name": "Arm 2",
+          "shadow": "#0a2a14",
+          "charset": ":;+#"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "bg": "#060714",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.35,
+    "lightAzimuth": -70,
+    "lightElevation": 25,
+    "depthFade": 0.3,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}

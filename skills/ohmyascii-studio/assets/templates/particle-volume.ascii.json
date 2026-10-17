@@ -1,0 +1,151 @@
+{
+  "v": 1,
+  "name": "Particle Volume starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Particle Volume starter",
+      "duration": 24,
+      "fit": 1.35,
+      "camera": {
+        "rot": [
+          -38,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0.3,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": [
+          {
+            "type": "sway",
+            "axis": "x",
+            "amp": 10,
+            "speed": 0.041666666666666664,
+            "phase": 0
+          },
+          {
+            "type": "sway",
+            "axis": "z",
+            "amp": 8,
+            "speed": 0.041666666666666664,
+            "phase": 0.25
+          }
+        ]
+      },
+      "fields": [
+        {
+          "type": "noise",
+          "layer": "back",
+          "charset": " .\u00b7",
+          "colors": [
+            "#03020a",
+            "#2a0f3d",
+            "#5b2a7a"
+          ],
+          "scale": 0.7,
+          "speed": 0.3,
+          "intensity": 0.6,
+          "angle": 90,
+          "seed": 1
+        },
+        {
+          "type": "stars",
+          "layer": "back",
+          "charset": " .\u00b7+*",
+          "colors": [
+            "#2a2a4a",
+            "#ffffff"
+          ],
+          "scale": 0.8,
+          "speed": 1,
+          "intensity": 1,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "particles",
+            "type": "galaxy",
+            "count": 1200,
+            "speed": 1,
+            "seed": 2
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            3.2,
+            3.2,
+            3.2
+          ],
+          "color": "#d6e4ff",
+          "emissive": 1,
+          "anim": [],
+          "name": "Arms",
+          "shadow": "#2a1650",
+          "charset": " .\u00b7:+*#@"
+        },
+        {
+          "geom": {
+            "kind": "shape",
+            "type": "sphere"
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.2
+          ],
+          "color": "#fff2c4",
+          "emissive": 0.7,
+          "anim": [
+            {
+              "type": "pulse",
+              "amp": 0.06,
+              "speed": 0.25,
+              "phase": 0
+            }
+          ],
+          "name": "Core",
+          "shadow": "#ff8a3d"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .\u00b7:+*#@",
+    "bg": "#03020a",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.16,
+    "lightAzimuth": 0,
+    "lightElevation": 30,
+    "depthFade": 0.35,
+    "gridDots": false,
+    "intro": 0,
+    "shimmer": 0
+  }
+}

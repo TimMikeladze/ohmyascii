@@ -1,139 +1,74 @@
 ---
 name: ohmyascii-studio
-description: Build ASCII animations for the ohmyascii studio by writing `*.ascii.json` piece files into a folder the studio is holding — logos, 3D models, and whole animated 2D/3D worlds (many objects, generative backgrounds, camera moves). Use when asked to make, tweak or model an ASCII render/animation/logo/scene/world, or when the user mentions the ohmyascii studio, pieces, or `.frame.txt`.
+description: Create, art-direct, refine, and preview stylized ASCII animations, creatures, logos, models, and animated 2D or 3D worlds as ohmyascii .ascii.json pieces. Use for ASCII art animation requests, terminal scenes, studio pieces, koi-pond-inspired compositions, or edits based on .frame.txt feedback.
 ---
 
-# ohmyascii-studio
+# ASCII animation studio
 
-The studio (this repo's app, `pnpm dev`) can **hold a folder** (Folder section → Open folder,
-desktop Chrome/Edge). Every `*.ascii.json` in it is a *piece*. You write pieces with plain file
-edits; the studio renders the active one live within ~0.5s, saves the user's slider tweaks back
-to the same file, and writes what it rendered to `<name>.frame.txt` next to it.
+Create an authored miniature world: recognizable silhouettes, deliberate glyph textures, a coherent palette, and motion with a reason. The koi pond is the craft benchmark. Transfer its care to the user's subject and style.
 
-## MCP tools (if the `ohmyascii-studio` server is connected)
+Deliver a working `*.ascii.json` piece, inspect rendered frames, and refine visible defects before handing it over. Use the existing ohmyascii renderer; the scene remains editable in the studio and playable in the terminal.
 
-Prefer them over raw file edits: `studio_guide` (full format), `get_gallery_piece` (tuned examples),
-`validate_piece`, `render_piece` (headless text frames at any time `t` — check composition and motion
-without the studio), `list_pieces`, `read_piece` (includes the studio's latest `.frame.txt`),
-`write_piece` (validates, normalises, saves, returns a preview). Server: `scripts/mcp-server.ts`.
-Previews cover every kind of piece (world, scene, image, text, preset).
+## 1. Understand the requested experience
 
-## Terminal
+Extract a short working brief from the request and conversation: **subject/action; mood/style; required details; target surface and dimensions; palette/glyph restrictions; duration and loop requirement; output path**. Separate explicit constraints from your creative choices. For an edit, read the current piece first and preserve everything outside the request.
 
-Any piece also plays in a terminal: `ohmyascii ./<slug>.ascii.json --watch` (in this repo `pnpm cli`),
-or `ohmyascii bake <piece> > out.sh` for a self-playing script. Library: `openTerminalPiece` in
-`packages/terminal`. See docs/terminal.md.
+If the subject or a consequential conflict is unresolved, ask one focused question. Otherwise state a one-sentence direction and proceed. A useful request is enough authorization to create the piece; creative choices do not need an approval round. With no target specified, use a studio-friendly world, 96×40 preview, 12-second duration, and `<project>/ascii/<slug>.ascii.json`. Do not block creation on a browser folder connection. With no subject at all, ask what should be animated.
 
-## Loop
+Read [art-direction.md](references/art-direction.md) for composition, style translation, material glyphs, creature construction, and the detailed koi study. Turn adjectives into visible decisions before authoring.
 
-1. Ask which folder the studio holds if unknown (any folder works; a project's `ascii/` is typical).
-2. Write `<slug>.ascii.json`. A new piece is auto-opened when no other piece is active;
-   otherwise tell the user to click it under Folder.
-3. Wait ~2s, then read `<slug>.frame.txt` — the plain-text glyph grid of the current frame.
-   Check silhouette, density and framing from it. It is a snapshot mid-animation.
-4. Edit the piece (or the SVG/image it references — that reloads too) and re-read the frame. **Re-read the piece before each edit**: the user may
-   have changed it from the studio (studio saves rewrite the file, config as a diff).
+**Done:** the brief implies a recognizable subject, a distinct treatment, and a concrete deliverable.
 
-## Piece format
+## 2. Ground the design in working examples
 
-```json
-{
-  "v": 1,
-  "name": "Optional label",
-  "source": { "kind": "preset", "key": "rings" },
-  "config": { "charset": " .:-=+*#%@", "colorMode": "mono", "fg": "#f2f2f2" }
-}
-```
+Read the selection table in [patterns.md](references/patterns.md), then the matching pattern card. It covers ten overall animation types with complete copyable pieces: hero turntable, kinetic type, creature habitat, scenic diorama, radial ornament, orbital system, particle volume, generative field, flight tunnel, and staged action. Choose by composition and motion, then adapt the pattern's subject, palette, proportions and timing to the brief. The user can name a pattern directly; otherwise choose it without asking them to classify their idea. For an existing piece, preserve its structure unless the requested change needs another pattern.
 
-`config` lists only keys that differ from defaults; unknown keys or wrong types are dropped
-silently. An invalid file shows an error toast in the studio and keeps the last good render.
+Use [gallery.md](references/gallery.md) to find a second example only when it supplies a missing technique. On first use, inspect `koi` as the quality reference. Retrieve complete gallery JSON through MCP `get_gallery_piece`, or the bundled helper below. Borrow construction techniques; change composition, palette, anatomy, and choreography to match the brief. Templates are supported starting structures, not guaranteed seamless loops or finished user-specific artwork.
 
-### Sources
+With MCP, read `studio_guide` for current engine details. Without it, read [format.md](references/format.md); in a checkout, the authorities are `lib/ascii/piece.ts`, `lib/ascii/config.ts`, `lib/ascii/world.ts`, `lib/ascii/scene.ts`, and tuned examples in `lib/ascii/worlds.ts`. The in-app AI's `{world,config}` reply is a different envelope from a piece file.
 
-| kind | fields |
+**Done:** the chosen geometry and effects exist in the renderer, with an understood reference for the hardest part.
+
+## 3. Compose and choreograph
+
+Choose `world` for environments or independent actors, `scene` for one sculpted object, and `image`/`text` for supplied marks or typography. Establish silhouette and framing before decorative detail. For worlds, name objects by visual role, compose background/subject/accent layers, and give materials distinct glyph ramps. Use restrained asymmetry, quiet space, and one strongest focal area unless the user requests another treatment.
+
+Read [motion-and-verification.md](references/motion-and-verification.md) before setting speeds. Build primary action, subtle secondary movement, and quieter environmental movement. A strict seamless loop needs closure for every moving channel, including fields, arrays, geometry, and camera; `duration` alone does not provide it. Use supported approximations for unavailable effects and explain any consequential limitation.
+
+Prefer roughly 4–14 authored objects and 1–3 fields initially; arrays and sculpt prims carry detail efficiently. These are craft budgets, not schema limits. At 80×24, enlarge defining features and simplify ornaments; verify with terminal aspect 2. Preserve explicit monochrome, ASCII-only, or static-camera constraints.
+
+**Done:** a complete piece expresses the brief using only stored, supported properties.
+
+## 4. Render, critique, and revise
+
+Use the first available route:
+
+| Available environment | Execution route |
 |---|---|
-| `preset` | `key`: `starburst` `spiral` `rings` `bolt` `heart` `hexagon` `star` |
-| `text` | `text` (≤6 lines, `\n`), `fontKey`?: `geist-mono` `jetbrains` `space` `plex` `system`, `weight`? 300–900 |
-| `image` | `path` relative to the piece: `.svg` `.png` `.jpg` `.webp` `.gif` inside the folder. You can write an SVG yourself — white shapes on transparent extrude best |
-| `scene` | `scene`: a 3D model, below |
-| `world` | `world`: a whole animated scene — many objects, backgrounds, camera. Below |
+| ohmyascii MCP | `validate_piece({piece: JSON-text})`, `render_piece({piece: JSON-text,times,cols,rows})`, then `write_piece({path,piece: JSON-text})`. Read tool schemas; names can be server-prefixed. MCP paths are relative to its configured root. |
+| Checkout and dependencies | Use the bundled helper for parser diagnostics, text frames, colored PNG contact sheets, and gallery JSON. |
+| Installed terminal CLI | `ohmyascii render <piece> --t 0 --cols 80 --rows 24 --aspect 2 --color none`; repeat at multiple times. See `docs/terminal.md` in a checkout. |
+| Studio folder only | Write the piece, open it in Folder, then inspect its `.frame.txt` after roughly 2 seconds. Check the file's age. One snapshot cannot verify motion or a loop. |
+| No renderer available | Deliver complete JSON and an exact preview command; explicitly say rendering is unverified. Do not claim visual inspection. |
 
-Images/text: `shape: "extrude"` (logos, silhouettes; `thickness`) or `"relief"` (photos;
-`reliefDepth`, usually with `maskMode: "none"`, `shade: "both"`).
+In the checkout, run these commands from the repo root. If the skill was installed elsewhere, substitute its actual directory for `skills/ohmyascii-studio`; `--repo` identifies the renderer checkout.
 
-### Scene source (3D modelling)
-
-```json
-{ "kind": "scene", "scene": {
-  "v": 1, "blend": 0.12,
-  "prims": [
-    { "type": "sphere", "op": "add", "pos": [0, 0.22, 0], "rot": [0, 0, 0], "scale": [0.9, 0.9, 0.9], "color": "#e4e4e4" },
-    { "type": "cylinder", "op": "subtract", "pos": [0, 0.22, 0], "rot": [90, 0, 0], "scale": [0.36, 1.4, 0.36], "color": "#8a8a8a" }
-  ],
-  "dabs": [ { "p": [0.3, 0.5, 0.2], "r": 0.08, "op": "add", "color": "#ff6a3d" } ]
-} }
+```bash
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts --list
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
+pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
 ```
 
-- `type`: `sphere box cylinder torus cone`. Unit shapes centred on the origin (sphere diameter
-  1 at scale 1); keep the model within roughly ±1. `rot` is Euler degrees (X, then Y, then Z).
-- `op: "subtract"` carves. `blend` = smooth-union radius (0 = hard CSG, 0.05–0.2 organic).
-- `dabs` are sculpt blobs (sphere radius `r`), for small bumps/details.
-- Colours show only with `"colorMode": "source"`. `id` is optional (generated).
+Inspect text for silhouette and density and the colored contact sheet for hierarchy and materials. Compare ordinary motion with the seam; fix the largest visible defect, re-read the on-disk piece, edit, and render again. Parser success is insufficient: check normalization changes, skipped assets, crop, overlapping actors, broken anatomy, and target-size readability. The helper writes previews only when `--out` is supplied and never rewrites the piece.
 
-### World source (whole 2D / 3D scenes)
+**Done:** the brief's constraints survive parsing; actual frames demonstrate recognizable subjects and intended motion; loop claims have evidence. Read the verification reference for the acceptance rubric and troubleshooting.
 
-```json
-{ "kind": "world", "world": {
-  "name": "Moonrise", "duration": 12, "fit": 1.2,
-  "camera": { "rot": [-12, 0, 0], "zoom": 1, "fov": 0.3, "pan": [0, 0.1], "anim": [{ "type": "sway", "axis": "y", "amp": 8, "speed": 0.083 }] },
-  "fields": [
-    { "type": "gradient", "layer": "back", "charset": " .·:", "colors": ["#05040f", "#2a1a50"], "angle": 90 },
-    { "type": "stars", "layer": "back", "charset": " .·+*", "colors": ["#3a4060", "#ffffff"] }
-  ],
-  "objects": [
-    { "name": "Moon", "geom": { "kind": "shape", "type": "sphere" }, "pos": [0.6, 0.5, -1], "scale": [0.5, 0.5, 0.5],
-      "color": "#fff4d6", "shadow": "#1a1830", "anim": [{ "type": "bob", "axis": "y", "amp": 0.05, "speed": 0.083 }] },
-    { "name": "Sea", "geom": { "kind": "terrain", "type": "ocean", "amp": 0.04, "freq": 5, "speed": 1 },
-      "pos": [0, -0.45, 0], "scale": [6, 1, 4], "color": "#9fb8ff", "shadow": "#05040f", "charset": ".·-~=≈" }
-  ]
-} }
+## 5. Deliver something immediately playable
+
+Return the saved piece path, one sentence describing its visual treatment, a brief factual verification result, and one playback command. Keep design analysis out of the handoff unless requested. If the studio holds the output folder, select the new piece under **Folder**; otherwise it can be opened later. Studio sliders save to the same JSON: re-read before each subsequent edit.
+
+```bash
+pnpm cli ascii/pond.ascii.json --watch
 ```
 
-- **Camera**: `rot` [tilt, turn, roll] — negative tilt looks down. `fov` 0 = flat 2D (use flat shapes on
-  z-layers), 0.25–0.4 for 3D. `fit` = world half-height visible. Y up, +Z toward the viewer.
-- **Objects**: `geom.kind` `shape` (sphere box cylinder torus cone) · `flat` (circle ring rect star polygon heart
-  moon petal cross triangle; `bevel` pillow shading) · `text` · `curve` (helix knot lissajous spiral circle, `tube`) ·
-  `terrain` (hills mountains dunes ocean; scale x/z to widen) · `particles` (stars snow rain fireflies embers galaxy
-  ring dust; `count`) · `sculpt` (a scene as above). Material: `color` (lit) → `shadow` (unlit), per-object
-  `charset`, `emissive` 0–1, `tint: "height"` (ramp bottom→top: suns, flames), `source: true` (sculpt colours).
-- **Animation** (`anim`, summed): `spin` (deg/s) · `orbit` (radius, deg/s, tilt, phase, plane xz|xy) · `bob` /
-  `sway` / `pulse` (Hz) · `drift` (vel + wrap) · `keys` (looped keyframe offsets) · deformers `wave`, `twist`.
-- **Array** (`array`): `count`, `offset`, `step`, `rot` (per copy), `grow`, `spin` (whole ring), `phase` (s delay
-  per copy — staggered waves), `jitter` (random heights). Ring of 12: `offset [0.6,0,0]`, `rot [0,30,0]`.
-- **Fields**: `gradient plasma noise waves ripples rain fire aurora tunnel vortex stars metaballs rings grid`;
-  `layer` back (behind objects) | front (over them); `colors` 2–4 stops; `random: true` for glyph rain/stars.
-- Keep it cheap: ≤ ~14 objects, particles ≤ 12000. The full spec the in-app AI uses is
-  `buildInstructions()` in `lib/ascii/world-prompt.ts`; tuned examples are in `lib/ascii/worlds.ts`.
-  Worlds ignore `motion`/`rotX…` config (the world camera moves); look keys (`bg`, `charset`, light) still apply.
-
-## Config keys (defaults → useful range)
-
-- **Glyphs**: `charset` `" .·:▴▲"` (dark→bright ramp; first char usually space) ·
-  `fontKey` · `fontWeight` 500 (300–800) · `cellSize` 7 (4–24 px) · `cellAspect` 1 (0.6–2.4) · `glyphScale` 1.1.
-  Ramps: `" .:-=+*#%@"`, `" ░▒▓█"`, `" 01"`, `" ⠁⠃⠇⡇⣇⣧⣷⣿"`, `" ·.:∙•●"`.
-- **Colour**: `colorMode` `gradient` | `mono` | `depth` | `source` · `fg` `#e4e4e4` · `fg2` `#6a6a6a` · `bg` `#0f0f0f` · `transparentBg` false.
-- **Light/tone**: `shade` `light` | `image` | `both` · `lightAzimuth` -35 (±180) · `lightElevation` 35 (±90) ·
-  `ambient` 0.22 · `brightness` 0.08 (±0.5) · `contrast` 1.15 (0.3–3) · `gamma` 1 · `invert` · `depthFade` 0.25 · `pointerLight`.
-- **Geometry (images/text)**: `shape` `extrude` | `relief` · `thickness` 0.22 (0–0.8) · `reliefDepth` 0.35 ·
-  `maskMode` `auto` `alpha` `luma` `luma-invert` `none` · `threshold` 0.5 · `smooth` 1 (0–4) · `invertMask`.
-- **Motion**: `motion` `spin` | `sway` | `static` · `spinX/Y/Z` 0/22/0 (deg/s, ±180) · `swayX` 8, `swayY` 28 (0–90) · `swaySpeed` 0.8 ·
-  `rotX/Y/Z` -24/32/0 base pose · `zoom` 1 (0.3–2) · `perspective` 0.35 (0–1.1) · `offsetX/Y` (±0.5) · `interactive` · `inertia` · `wheelZoom`.
-- **Effects**: `waveAmp` 0 (0–0.3), `waveFreq` 6, `waveSpeed` 1.5 · `shimmer` 0.04 · `scanStrength` 0, `scanSpeed` 0.25 · `intro` 1.2 s (0 = off).
-- **Grid**: `gridDots` true · `gridChar` `·` · `gridColor` · `gridOpacity` 0.1.
-
-Source of truth: `lib/ascii/config.ts` (`AsciiConfig`), `lib/ascii/piece.ts`, `lib/ascii/scene.ts`, `lib/ascii/world.ts`.
-
-## Using a piece in an app
-
-`<OhMyAscii source={...} config={piece.config} />` from `components/ohmyascii.tsx`
-(scene: `source={{ kind: 'scene', scene: piece.source.scene }}`; world: `source={{ kind: 'world', world: piece.source.world }}`; image: the file's URL).
+For distribution, baking, image/text assets, browser playback, and Claude/Codex invocation, read [delivery.md](references/delivery.md). Deliver only the formats requested; use the studio for its supported video exports.

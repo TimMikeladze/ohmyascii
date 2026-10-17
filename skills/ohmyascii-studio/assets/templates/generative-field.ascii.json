@@ -1,0 +1,89 @@
+{
+  "v": 1,
+  "name": "Generative Field starter",
+  "source": {
+    "kind": "world",
+    "world": {
+      "v": 1,
+      "name": "Generative Field starter",
+      "duration": 16,
+      "fit": 1.1,
+      "camera": {
+        "rot": [
+          0,
+          0,
+          0
+        ],
+        "zoom": 1,
+        "fov": 0,
+        "pan": [
+          0,
+          0
+        ],
+        "anim": []
+      },
+      "fields": [
+        {
+          "type": "metaballs",
+          "layer": "back",
+          "charset": " .:-=+*#%@",
+          "colors": [
+            "#12040e",
+            "#ff3a6a",
+            "#ffb04a",
+            "#fff0b0"
+          ],
+          "scale": 1.4,
+          "speed": 0.5,
+          "intensity": 1,
+          "angle": 90,
+          "seed": 1
+        }
+      ],
+      "objects": [
+        {
+          "geom": {
+            "kind": "particles",
+            "type": "embers",
+            "count": 160,
+            "speed": 0.5,
+            "seed": 4
+          },
+          "pos": [
+            0,
+            0,
+            0
+          ],
+          "rot": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            2.4,
+            2,
+            1
+          ],
+          "color": "#ffd0a0",
+          "emissive": 1,
+          "anim": [],
+          "name": "Bubbles",
+          "shadow": "#ff3a6a",
+          "charset": ".\u00b7o"
+        }
+      ]
+    }
+  },
+  "config": {
+    "charset": " .:-=+*#%@",
+    "cellSize": 6,
+    "bg": "#12040e",
+    "brightness": 0.02,
+    "contrast": 1.1,
+    "ambient": 0.3,
+    "depthFade": 0,
+    "gridDots": false,
+    "shimmer": 0,
+    "intro": 0
+  }
+}
