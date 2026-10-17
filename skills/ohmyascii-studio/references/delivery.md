@@ -2,7 +2,7 @@
 
 ## One canonical skill, two agents
 
-The committed source is `skills/ohmyascii-studio`. `pnpm install` or `pnpm skills:sync` mirrors the complete folder into `.claude/skills/ohmyascii-studio` and `.agents/skills/ohmyascii-studio`. Edit the committed source, then sync; mirrored edits are replaced. The helper requires an ohmyascii checkout and its installed Node dependencies; copying the instructions alone does not install the renderer.
+The committed source is `skills/ohmyascii-studio`. `bun install` or `bun run skills:sync` mirrors the complete folder into `.claude/skills/ohmyascii-studio` and `.agents/skills/ohmyascii-studio`. Edit the committed source, then sync; mirrored edits are replaced. The helper requires an ohmyascii checkout and its installed Node dependencies; copying the instructions alone does not install the renderer.
 
 | Environment | Invocation |
 |---|---|
@@ -23,13 +23,13 @@ MCP is optional. When connected, `studio_guide` gives current engine details, `l
 
 The MCP server's root comes from `OHMYASCII_STUDIO_DIR`, falling back to its working directory. Do not assume it equals the current shell directory. Use its listed paths and tool errors to establish the root. Files and assets must stay within that root; remote images are disabled by default. Re-read an existing piece before replacing it; choose a fresh slug when making a new work.
 
-Without MCP, use plain file edits plus the bundled helper or CLI. Run `pnpm exec tsx <skill-directory>/scripts/inspect.ts --help` for its exact options. Paths supplied to the helper are resolved from the shell's working directory; `--repo` locates code and dependencies, not the output folder. An installed CLI provides `ohmyascii list`, `ohmyascii export koi`, `ohmyascii guide`, `ohmyascii render ...` and playback. Within this checkout, use `pnpm cli` in place of `ohmyascii`.
+Without MCP, use plain file edits plus the bundled helper or CLI. Run `bun run tsx <skill-directory>/scripts/inspect.ts --help` for its exact options. Paths supplied to the helper are resolved from the shell's working directory; `--repo` locates code and dependencies, not the output folder. An installed CLI provides `ohmyascii list`, `ohmyascii export koi`, `ohmyascii guide`, `ohmyascii render ...` and playback. Within this checkout, use `bun run cli` in place of `ohmyascii`.
 
 If dependencies are missing, follow the user's environment/install policy. If unable to render, save the complete piece and report the missing dependency and unverified preview. Do not silently substitute a new animation framework or edit the renderer to accommodate invented scene properties.
 
 ## Studio folder feedback
 
-Start the app with `pnpm dev`. In desktop Chrome or Edge, open the studio's **Folder → Open folder** and select the output directory. Only the active piece is rendered. A new piece can auto-open when no other piece is active; otherwise select it in Folder. Do not guarantee auto-selection.
+Start the app with `bun run dev`. In desktop Chrome or Edge, open the studio's **Folder → Open folder** and select the output directory. Only the active piece is rendered. A new piece can auto-open when no other piece is active; otherwise select it in Folder. Do not guarantee auto-selection.
 
 The studio polls around 500 ms and writes frame feedback after roughly 1.5 seconds. Read `<slug>.frame.txt` after about 2 seconds and check its modification time. A disconnected browser or another selected piece leaves old feedback; use the helper instead of waiting indefinitely. Frame text contains glyphs, not reliable color evidence. Inspect colored previews or the browser to judge palette.
 
@@ -46,11 +46,11 @@ Text can use `source:{kind:"text",text,fontKey,weight}`. Keep short lettering la
 ## Playback and export
 
 ```bash
-pnpm cli ascii/moon-pond.ascii.json --watch
-pnpm cli ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --fps 20
-pnpm cli render ascii/moon-pond.ascii.json --t 3 --cols 80 --rows 24 --color none
-pnpm cli bake ascii/moon-pond.ascii.json --seconds 12 --fps 20 --color truecolor --format sh > /tmp/moon-pond.sh
-pnpm cli bake ascii/moon-pond.ascii.json --seconds 12 --fps 20 --color truecolor --format cast > /tmp/moon-pond.cast
+bun run cli ascii/moon-pond.ascii.json --watch
+bun run cli ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --fps 20
+bun run cli render ascii/moon-pond.ascii.json --t 3 --cols 80 --rows 24 --color none
+bun run cli bake ascii/moon-pond.ascii.json --seconds 12 --fps 20 --color truecolor --format sh > /tmp/moon-pond.sh
+bun run cli bake ascii/moon-pond.ascii.json --seconds 12 --fps 20 --color truecolor --format cast > /tmp/moon-pond.cast
 ```
 
 A baked shell script plays with `sh /tmp/moon-pond.sh`; a cast plays with asciinema. The bake formats are `sh`, `cast`, `json`, and `ans`. Raw `ans` has no timing: `cat` does not give timed playback. Piped output can select no color automatically; pass `--color truecolor` when the recording should retain color. Baking captures only the requested interval and cannot repair a discontinuous loop.
@@ -63,6 +63,6 @@ Give the user the concrete path first, then a short style description and what w
 
 > `ascii/moon-pond.ascii.json` — ivory koi circle a jade lotus over quiet ink-blue ripples. Checked at 80×24 across six times; the 12-second seam was inspected in color and text.
 >
-> Play: `pnpm cli ascii/moon-pond.ascii.json --watch`
+> Play: `bun run cli ascii/moon-pond.ascii.json --watch`
 
 Use the sentence about seam inspection only when that work actually happened. If only a parser ran, say “JSON validated; visual playback unverified.” Avoid pasting long JSON into the final reply when the saved file is already accessible, unless the user requests it.

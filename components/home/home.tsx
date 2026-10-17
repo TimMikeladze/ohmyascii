@@ -88,7 +88,7 @@ export function Home() {
     status && engine === 'claude' && !claudeOk
       ? status.local
         ? 'Claude Code is not installed. Install it (npm i -g @anthropic-ai/claude-code), run `claude` once to log in, then reload.'
-        : 'Claude Code runs only when the site is served locally (pnpm dev on localhost). Use AI Gateway here.'
+        : 'Claude Code runs only when the site is served locally (bun run dev on localhost). Use AI Gateway here.'
       : status && engine === 'claude' && claudeOk
         ? `Uses your local Claude Code ${status.claude.version} and its login — no API key, tools disabled.`
         : status && engine === 'gateway' && !gatewayOk

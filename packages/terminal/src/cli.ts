@@ -9,7 +9,7 @@ import { version } from '../package.json'
 import { parseArgs, type Args } from './args'
 
 // ohmyascii in the terminal: browse the gallery, play / print / bake any studio piece.
-// In this repo: `pnpm cli [command]`. Installed: `ohmyascii [command]`. See docs/terminal.md.
+// In this repo: `bun run cli [command]`. Installed: `ohmyascii [command]`. See docs/terminal.md.
 
 const HELP = `ohmyascii — animated ASCII pieces in your terminal
 

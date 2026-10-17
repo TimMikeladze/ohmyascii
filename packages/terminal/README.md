@@ -20,6 +20,6 @@ process.stdout.write(r.frame(1.5).join('\n'))
 
 Colour is auto-detected (`NO_COLOR`, `FORCE_COLOR`, `COLORTERM`, `TERM`); `render` and `bake` print plain text when piped unless you pass `--color`.
 
-Build: `pnpm terminal:build` from the ohmyascii repo root. The full guide is `docs/terminal.md` in that repo.
+Build: `bun run terminal:build` from the ohmyascii repo root. The full guide is `docs/terminal.md` in that repo.
 
 License: MIT.

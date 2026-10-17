@@ -228,7 +228,7 @@ export function AiPanel({ current, onApply, handoff, onCopy, autoPrompt }: AiPan
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           {status.local
             ? 'Claude Code is not installed: npm i -g @anthropic-ai/claude-code, run `claude` once to log in, then reload.'
-            : 'Claude Code only runs when the studio is served locally (pnpm dev). Use Gateway here.'}
+            : 'Claude Code only runs when the studio is served locally (bun run dev). Use Gateway here.'}
         </p>
       )}
       {status && engine === 'gateway' && !status.gateway && (

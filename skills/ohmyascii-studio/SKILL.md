@@ -54,9 +54,9 @@ Use the first available route:
 In the checkout, run these commands from the repo root. If the skill was installed elsewhere, substitute its actual directory for `skills/ohmyascii-studio`; `--repo` identifies the renderer checkout.
 
 ```bash
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts --list
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts --list
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
 ```
 
 Inspect text for silhouette and density and the colored contact sheet for hierarchy and materials. Compare ordinary motion with the seam; fix the largest visible defect, re-read the on-disk piece, edit, and render again. Parser success is insufficient: check normalization changes, skipped assets, crop, overlapping actors, broken anatomy, and target-size readability. The helper writes previews only when `--out` is supplied and never rewrites the piece.
@@ -68,7 +68,7 @@ Inspect text for silhouette and density and the colored contact sheet for hierar
 Return the saved piece path, one sentence describing its visual treatment, a brief factual verification result, and one playback command. Keep design analysis out of the handoff unless requested. If the studio holds the output folder, select the new piece under **Folder**; otherwise it can be opened later. Studio sliders save to the same JSON: re-read before each subsequent edit.
 
 ```bash
-pnpm cli ascii/pond.ascii.json --watch
+bun run cli ascii/pond.ascii.json --watch
 ```
 
 For distribution, baking, image/text assets, browser playback, and Claude/Codex invocation, read [delivery.md](references/delivery.md). Deliver only the formats requested; use the studio for its supported video exports.

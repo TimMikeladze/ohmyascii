@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   if (messages[0].role !== 'user') messages.shift()
 
   if (body.engine === 'claude') {
-    if (!isLocalRequest(req)) return fail('Claude Code is only available when the studio runs locally (pnpm dev).', 403)
+    if (!isLocalRequest(req)) return fail('Claude Code is only available when the studio runs locally (bun run dev).', 403)
     // With a session, Claude Code keeps the conversation: a resumed run gets only the new message.
     // Without one (or on the first turn), earlier turns go in as a transcript.
     const session = body.session && isSessionId(body.session.id) ? body.session : undefined

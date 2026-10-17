@@ -5,9 +5,9 @@ Turn any photo, SVG, logo or text — a 3D shape you model, sculpt and paint you
 ## Run
 
 ```bash
-pnpm install
-pnpm dev            # binds 127.0.0.1; pass -p <port> if 3000 is taken (pnpm dev:lan to reach it from other devices)
-pnpm test           # vitest: modelling, worlds (animation, geometry, fields, renderer), AI reply parsing
+bun install
+bun run dev            # binds 127.0.0.1; pass -p <port> if 3000 is taken (bun run dev:lan to reach it from other devices)
+bun run test           # vitest: modelling, worlds (animation, geometry, fields, renderer), AI reply parsing
 ```
 
 ## The site
@@ -18,12 +18,12 @@ pnpm test           # vitest: modelling, worlds (animation, geometry, fields, re
 
 AI scene generation (optional) has two engines:
 
-- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `OHMYASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site, and refused for non-loopback clients (`pnpm dev` binds 127.0.0.1).
+- **Claude Code (local)** — when the studio runs on localhost and `claude` is installed and logged in, the chat uses your own Claude Code (`claude -p`, no API key, tools disabled), keeping one Claude session per chat. `OHMYASCII_CLAUDE_MODEL` picks a model. Never available on a deployed site, and refused for non-loopback clients (`bun run dev` binds 127.0.0.1).
 - **AI Gateway** — set `AI_GATEWAY_API_KEY`, or run `vercel env pull .env.local` in a linked project to get an OIDC token. `OHMYASCII_AI_MODEL` overrides the model (default `anthropic/claude-sonnet-5.5`). `/api/generate` validates requests, rejects cross-site browsers, caps prompt size and rate-limits each IP (`OHMYASCII_AI_RATE_LIMIT`, default 20 per 10 minutes per server instance). On a public deployment also add a Vercel Firewall rate-limit rule and an AI Gateway budget.
 
 ## Install with the shadcn CLI
 
-The registry is served from `public/r/` by this app (rebuilt on every `pnpm build`, or `pnpm registry:build`).
+The registry is served from `public/r/` by this app (rebuilt on every `bun run build`, or `bun run registry:build`).
 
 ```bash
 # Just the component (components/ohmyascii.tsx + lib/ascii/*)
@@ -111,9 +111,9 @@ The studio can hold a folder on disk (Folder → **Open folder**, desktop Chrome
 - After each change the rendered frame is written next to the piece as `<name>.frame.txt`, so the agent can read what it made and iterate.
 - The folder is remembered; after a browser restart click **Reconnect**.
 
-**MCP server** — `.mcp.json` registers `ohmyascii-studio` (`pnpm mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of any piece at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
+**MCP server** — `.mcp.json` registers `ohmyascii-studio` (`bun run mcp`) for Claude Code started in this repo: `studio_guide`, `list_gallery`, `get_gallery_piece`, `validate_piece`, `render_piece` (headless ASCII frames of any piece at chosen times, no browser), `list_pieces`, `read_piece` (with the studio's `.frame.txt`), `write_piece` (validate, normalise, save, preview). It works in `OHMYASCII_STUDIO_DIR` or the working directory; see `docs/local-claude.md` to point it at another folder.
 
-The [ohmyascii-studio skill](skills/ohmyascii-studio/SKILL.md) teaches agents to interpret a brief, art-direct a scene, build recognizable creatures, choreograph motion, and inspect real previews. Its references cover all 36 gallery worlds, a detailed koi-pond construction study, material glyphs, palettes, the complete piece/config format, and exact loop timing. `pnpm install` mirrors the full skill into `.claude/skills/` and `.agents/skills/` (or run `pnpm skills:sync`).
+The [ohmyascii-studio skill](skills/ohmyascii-studio/SKILL.md) teaches agents to interpret a brief, art-direct a scene, build recognizable creatures, choreograph motion, and inspect real previews. Its references cover all 36 gallery worlds, a detailed koi-pond construction study, material glyphs, palettes, the complete piece/config format, and exact loop timing. `bun install` mirrors the full skill into `.claude/skills/` and `.agents/skills/` (or run `bun run skills:sync`).
 
 ```text
 # Claude Code — short command, or /ohmyascii-studio
@@ -145,7 +145,7 @@ The JSON starters are complete editable animation files, not prompt snippets. Co
 Preview a bundled starter immediately:
 
 ```bash
-pnpm cli skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json
+bun run cli skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json
 ```
 
 Start your own piece (choose a new filename if the destination already exists):
@@ -153,7 +153,7 @@ Start your own piece (choose a new filename if the destination already exists):
 ```bash
 mkdir -p ascii
 cp -n skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json ascii/moon-pond.ascii.json
-pnpm cli ascii/moon-pond.ascii.json --watch
+bun run cli ascii/moon-pond.ascii.json --watch
 ```
 
 Edit the copied JSON yourself, or ask `/ascii` / `$ohmyascii-studio` to personalize that file. It remains editable in the studio. Templates derived from the gallery retain ambient choreography: their `duration` is a recording interval, **not a guarantee of seamless looping**. Exact loops need every moving channel checked, including the camera, fields and particles.
@@ -163,9 +163,9 @@ Edit the copied JSON yourself, or ask `/ascii` / `$ohmyascii-studio` to personal
 The bundled helper works with the checkout's installed dependencies, without MCP or an open studio:
 
 ```bash
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts --list
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/moon-pond-preview
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts --list
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/moon-pond-preview
 ```
 
 `--list` lists gallery keys; `--json` exports a complete normalized piece. The preview command reports parser repairs, warnings and missing assets, and saves `frames.txt`, `contact-sheet.png`, and `report.json`. It never rewrites the input piece. Without `--out`, it prints the report and text frames. Run `--help` for all options.
@@ -176,9 +176,9 @@ Set dimensions to the actual delivery size; terminal cells usually need `--aspec
 
 Copy the **complete** `skills/ohmyascii-studio` directory, including references, scripts, metadata and templates, into the target project's `.claude/skills/` for Claude Code or `.agents/skills/` for Codex. For Claude's short `/ascii` alias, also copy `.claude/commands/ascii.md` into the target project's `.claude/commands/`. The installed skill itself is available as `/ohmyascii-studio` in Claude Code and `$ohmyascii-studio` in Codex. The Claude command file does not add a Codex slash command.
 
-The skill does not bundle the renderer or its Node dependencies. Use a configured ohmyascii MCP server, an installed terminal CLI, or the renderer checkout. If the helper is installed elsewhere, run it with the checkout's `pnpm exec tsx` and pass `--repo /path/to/ohmyascii`; input and output paths still resolve from your shell's working directory. See [delivery and installation](skills/ohmyascii-studio/references/delivery.md) for details.
+The skill does not bundle the renderer or its Node dependencies. Use a configured ohmyascii MCP server, an installed terminal CLI, or the renderer checkout. If the helper is installed elsewhere, run it with the checkout's `bun run tsx` and pass `--repo /path/to/ohmyascii`; input and output paths still resolve from your shell's working directory. See [delivery and installation](skills/ohmyascii-studio/references/delivery.md) for details.
 
-The source of truth stays in `skills/`; `pnpm skills:sync` replaces the local `.claude/skills/` and `.agents/skills/` mirrors. Edit the source rather than a mirror. Most starters use native geometry; if you adapt one to a supplied image, deliver that asset beside the piece using its relative path.
+The source of truth stays in `skills/`; `bun run skills:sync` replaces the local `.claude/skills/` and `.agents/skills/` mirrors. Edit the source rather than a mirror. Most starters use native geometry; if you adapt one to a supplied image, deliver that asset beside the piece using its relative path.
 
 ### Skill reference guide
 
@@ -198,8 +198,8 @@ See [folder mode](docs/studio-folder.md) for the studio's file feedback loop. Th
 Every studio piece plays in the terminal in full colour: gallery worlds, models, image / text / preset pieces.
 
 ```bash
-pnpm cli                                     # browse the gallery: ↑/↓ + enter, ←/→ scene, wasd orbit, q quit
-pnpm terminal:link                           # puts `ohmyascii` on your PATH
+bun run cli                                     # browse the gallery: ↑/↓ + enter, ←/→ scene, wasd orbit, q quit
+bun run terminal:link                           # puts `ohmyascii` on your PATH
 ohmyascii ./logo.ascii.json --watch          # any piece file; reloads on save
 ohmyascii 'http://localhost:3000/studio#s=…' # studio → Terminal copies this command
 ohmyascii bake koi --seconds 8 > koi.sh      # self-playing script (or --format cast | json | ans)

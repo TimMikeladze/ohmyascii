@@ -203,7 +203,7 @@ For example, from the repo root:
 
 ```bash
 cp skills/ohmyascii-studio/assets/templates/creature-habitat.ascii.json ascii/moon-pond.ascii.json
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --out /tmp/moon-pond-preview
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/moon-pond.ascii.json --cols 80 --rows 24 --aspect 2 --out /tmp/moon-pond-preview
 ```
 
 Create the output directory first if necessary, and choose a fresh destination if it already exists. These shell paths are examples; use the user's requested destination. The starter is not the finished result: inspect and edit it before claiming the user's specific brief is complete.

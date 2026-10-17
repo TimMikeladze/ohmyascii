@@ -5,8 +5,8 @@ Every studio piece plays in a terminal: gallery worlds, modelled scenes, and ima
 ## Use it
 
 ```bash
-pnpm cli                                   # browse the gallery (in this repo)
-pnpm terminal:link                         # build + `npm link` → `ohmyascii` on your PATH
+bun run cli                                   # browse the gallery (in this repo)
+bun run terminal:link                         # build + `bun link` → `ohmyascii` on your PATH
 ohmyascii koi                              # gallery key
 ohmyascii ./logo.ascii.json --watch        # piece file; reloads when the studio / an agent saves it
 ohmyascii 'http://localhost:3000/studio#s=…'   # studio link (studio → Terminal copies this)
@@ -43,7 +43,7 @@ Studio → Export → **Terminal** copies one of:
 
 ## Embed it
 
-`packages/terminal` is the `ohmyascii` package: the bin plus a typed library, bundled by tsup (`pnpm terminal:build`). It's private and not published yet.
+`packages/terminal` is the `ohmyascii` package: the bin plus a typed library, bundled by tsup (`bun run terminal:build`). It's private and not published yet.
 
 ```ts
 import { openPiece, openTerminalPiece } from 'ohmyascii'

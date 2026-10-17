@@ -1,10 +1,10 @@
-/** Read-only piece diagnostics. Run with the renderer checkout's `pnpm exec tsx`. */
+/** Read-only piece diagnostics. Run with the renderer checkout's `bun run tsx`. */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const HELP = `Usage: pnpm exec tsx <skill>/scripts/inspect.ts <piece-path|gallery-key> [options]
+const HELP = `Usage: bun run tsx <skill>/scripts/inspect.ts <piece-path|gallery-key> [options]
   --repo PATH       ohmyascii checkout (default: find above working directory)
   --list            list all gallery keys
   --json            print complete normalized piece JSON, without rendering

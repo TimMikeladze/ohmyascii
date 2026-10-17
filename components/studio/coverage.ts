@@ -4,7 +4,7 @@ import type { ArraySpec, Behaviour, Camera, Field, Geom, Keyframe, World, WObjec
 
 // Studio ⇄ JSON parity (AGENTS.md → "Studio and JSON stay in sync"). Every key the piece / world /
 // scene format stores maps to the label of the studio control that edits it. The types make this
-// exhaustive: adding a key to the format without an entry here fails `pnpm typecheck`, and
+// exhaustive: adding a key to the format without an entry here fails `bun run typecheck`, and
 // coverage.test.ts fails if a label isn't in the studio's source. `null` = internal, never shown
 // (ids). Everything is also editable in the JSON boxes, which go through the same parsers.
 

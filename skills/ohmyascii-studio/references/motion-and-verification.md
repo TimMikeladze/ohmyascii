@@ -57,9 +57,9 @@ For a loop of T seconds, inspect `0`, `T/4`, `T/2`, `3T/4`, `T-dt`, and `T`, whe
 For a 12-second loop at 20 fps:
 
 ```bash
-pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
-pnpm cli render ascii/pond.ascii.json --t 0.05 --cols 80 --rows 24 --aspect 2 --color none
-pnpm cli ascii/pond.ascii.json --cols 80 --rows 24 --fps 20
+bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
+bun run cli render ascii/pond.ascii.json --t 0.05 --cols 80 --rows 24 --aspect 2 --color none
+bun run cli ascii/pond.ascii.json --cols 80 --rows 24 --fps 20
 ```
 
 Compare 0 to T for pose/color agreement, then `T-dt → 0 → dt` for continuity of direction and speed. A loop may produce identical endpoint images and still snap because a channel holds its last key. Minor glyph changes from floating-point sampling are possible; judge the spatial pattern and rendered motion rather than inventing a universal pixel-difference cutoff. Compare the seam against ordinary adjacent-frame differences.

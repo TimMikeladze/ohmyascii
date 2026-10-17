@@ -28,8 +28,8 @@ Unchanged: generic terms — `lib/ascii/*`, `*.ascii.json` pieces, `AsciiConfig`
 
 1. `git mv` the three renamed paths (component, studio component, skill dir); edit every file in the grep list (`ascii-mesh|ascii/mesh|AsciiMesh|ascii-studio|AsciiStudio`).
 2. Docs + README + `skills/ohmyascii-studio/SKILL.md` (frontmatter `name:` must equal the dir name — `lib/ascii/skills.test.ts` enforces it, and it checks that every repo path the skill names exists).
-3. `pnpm skills:sync` re-mirrors `skills/` into `.claude/skills/` + `.agents/skills/` (replaces the old `ascii-studio` mirrors).
-4. `pnpm registry:build` regenerates gitignored `public/r/` as `ohmyascii.json` + `ohmyascii-studio.json`.
+3. `bun run skills:sync` re-mirrors `skills/` into `.claude/skills/` + `.agents/skills/` (replaces the old `ascii-studio` mirrors).
+4. `bun run registry:build` regenerates gitignored `public/r/` as `ohmyascii.json` + `ohmyascii-studio.json`.
 5. `gh repo rename ohmyascii` and update the git remote.
 6. Rename the Vercel project via the REST API (CLI has no rename command); update `.vercel/project.json` `projectName`.
 7. Rename the local directory.
@@ -42,4 +42,4 @@ Unchanged: generic terms — `lib/ascii/*`, `*.ascii.json` pieces, `AsciiConfig`
 
 ## Verify
 
-`pnpm typecheck`, `pnpm test`, `pnpm registry:build`, dev server + browser check (header, title, `/r/ohmyascii.json`), `gh repo view`, Vercel API project name.
+`bun run typecheck`, `bun run test`, `bun run registry:build`, dev server + browser check (header, title, `/r/ohmyascii.json`), `gh repo view`, Vercel API project name.

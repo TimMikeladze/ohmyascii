@@ -16,7 +16,7 @@ studio UI are one feature surface. Never ship a change to one without the other:
 
 - **New or changed key in the format** (`lib/ascii/config.ts`, `world.ts`, `scene.ts`): give it a
   studio control and an entry in `components/studio/coverage.ts`, whose types make this exhaustive
-  (`pnpm typecheck` fails until you do). Make it parse (`parseWorld` / `parseScene` /
+  (`bun run typecheck` fails until you do). Make it parse (`parseWorld` / `parseScene` /
   `sanitizeConfig`), serialise, and document it in `skills/ohmyascii-studio/SKILL.md` and the
   relevant `docs/`.
 - **New studio control**: it must edit a stored key. No UI-only state that a reload, share link,

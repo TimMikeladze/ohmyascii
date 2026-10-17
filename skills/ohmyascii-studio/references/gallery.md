@@ -1,6 +1,6 @@
 # Gallery atlas
 
-All 36 curated worlds in `lib/ascii/worlds.ts`, grouped by the construction lesson they teach. For reusable overall compositions and copyable starters, choose a [pattern](patterns.md) first; use this atlas to find supporting techniques. Retrieve full piece JSON with `get_gallery_piece({key})` or `pnpm exec tsx skills/ohmyascii-studio/scripts/inspect.ts <key> --json`. Keep each preset's config patch with its geometry: light and tone are part of the example.
+All 36 curated worlds in `lib/ascii/worlds.ts`, grouped by the construction lesson they teach. For reusable overall compositions and copyable starters, choose a [pattern](patterns.md) first; use this atlas to find supporting techniques. Retrieve full piece JSON with `get_gallery_piece({key})` or `bun run tsx skills/ohmyascii-studio/scripts/inspect.ts <key> --json`. Keep each preset's config patch with its geometry: light and tone are part of the example.
 
 Read the koi construction in [art-direction.md](art-direction.md) once. Then study the rows relevant to the request. Gallery durations are export lengths; evaluate exact looping independently.
 

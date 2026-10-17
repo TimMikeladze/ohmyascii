@@ -61,7 +61,7 @@ Plain JSON — goes into history, localStorage and (minus paint/meshes) share li
 
 ## Tests
 
-Vitest (`pnpm test`, `lib/ascii/scene.test.ts`): surface sampling, subtract/union culling, sculpt,
+Vitest (`bun run test`, `lib/ascii/scene.test.ts`): surface sampling, subtract/union culling, sculpt,
 paint, OBJ/STL parsing, serialisation, no-holes coverage (z-buffer vs ray-marched SDF), incremental
 update parity with full rebuilds.
 
