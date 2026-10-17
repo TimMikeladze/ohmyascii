@@ -50,19 +50,19 @@ Sources:
 - **Frame feedback**: after the active piece renders (debounced 1.5s), write
   `<stem>.frame.txt` = `OhMyAsciiHandle.getText()` — the agent reads it to check its work.
 
-## Agent skill — `skills/ohmyascii-studio/SKILL.md`
+## Agent skill — `skills/ohmyascii/SKILL.md`
 
 Source of truth in `skills/`; `scripts/setup-skills.mjs` (postinstall) mirrors it into
 `.claude/skills/` and `.agents/skills/` (gitignored), same as robocn. Covers intent, art direction,
 all 36 gallery examples, detailed koi construction, the complete format, motion and seamless-loop
 verification. Supporting references and the preview helper are mirrored with the entrypoint.
 Claude Code also has the committed `/ascii` alias in `.claude/commands/ascii.md`;
-Codex uses `$ohmyascii-studio`.
+Codex uses `$ohmyascii`.
 
 The skill can create and preview pieces before a browser holds a folder. Its `scripts/inspect.ts`
 helper validates and renders multiple times into text grids and a colored contact sheet. After
 connecting a folder, the write → read `.frame.txt` → refine loop supplies additional feedback.
-See [delivery](../skills/ohmyascii-studio/references/delivery.md).
+See [delivery](../skills/ohmyascii/references/delivery.md).
 
 ## Browser support
 

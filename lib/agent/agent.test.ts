@@ -37,7 +37,7 @@ describe('parseClaudeLine', () => {
 describe('agentPrompt', () => {
   it('points at the open piece and its frame file', () => {
     const p = agentPrompt({ request: 'add a moon', piecePath: 'art/night.ascii.json', folderName: 'ascii' })
-    expect(p.startsWith('Use the ohmyascii-studio skill.')).toBe(true)
+    expect(p.startsWith('Use the ohmyascii skill.')).toBe(true)
     expect(p).toContain('`art/night.ascii.json`')
     expect(p).toContain('`art/night.frame.txt`')
     expect(p).toContain('Request: add a moon')

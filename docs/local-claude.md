@@ -20,11 +20,11 @@ argv, nothing from the request in the command.
 ## This repo
 
 Already had (1) folder mode with `*.ascii.json` pieces + `.frame.txt` feedback and (3) the
-`ohmyascii-studio` skill mirror. Added:
+`ohmyascii` skill mirror. Added:
 
 | Piece | What |
 |---|---|
-| **Handoff** `lib/ascii/handoff.ts` | `agentPrompt()` — "Use the ohmyascii-studio skill…", piece path (or the scene JSON when no folder is held), the `.frame.txt` loop, the user's request. **Copy for Claude Code in your terminal** button in the *Generate with AI* section. |
+| **Handoff** `lib/ascii/handoff.ts` | `agentPrompt()` — "Use the ohmyascii skill…", piece path (or the scene JSON when no folder is held), the `.frame.txt` loop, the user's request. **Copy for Claude Code in your terminal** button in the *Generate with AI* section. |
 | **Local Claude engine** `lib/agent/claude-cli.ts` | The AI chat can run on the user's own Claude Code (`claude -p`, their subscription, no key). Spawned with fixed argv: `--output-format stream-json --include-partial-messages --tools "" --strict-mcp-config --setting-sources "" --system-prompt <instructions>` plus `--session-id` / `--resume` (see Sessions), prompt on stdin, cwd = OS temp dir. Text deltas are re-streamed as plain text, so the panel and `parseAiReply` don't care which engine answered. |
 | **Guard** `lib/agent/local.ts` | Local engine only when `NODE_ENV !== 'production'` and the `Host` is loopback (robocn's scan-route rule) and the `Origin`, if sent, is the same host. |
 | **Status** `GET /api/agent` | `{ local, claude: { installed, version } , gateway }` — `claude --version` with a 5s timeout, cached 30s. The panel picks *Claude Code (local)* when available, else *AI Gateway*, and explains how to enable either. |

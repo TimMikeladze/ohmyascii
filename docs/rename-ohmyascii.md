@@ -12,7 +12,8 @@ Full rebrand of the product, repo and every reference. Brand name is **lowercase
 | `components/ascii-mesh.tsx` | `components/ohmyascii.tsx` |
 | `AsciiStudio` component | `OhMyAsciiStudio` |
 | `components/studio/ascii-studio.tsx` | `components/studio/ohmyascii-studio.tsx` |
-| `ascii-studio` (registry item, MCP server, skill) | `ohmyascii-studio` |
+| `ascii-studio` (registry item, MCP server) | `ohmyascii-studio` |
+| `ascii-studio` (skill) | `ohmyascii` |
 | `ascii-mesh.vercel.app` | `ohmyascii.vercel.app` |
 | localStorage `ascii-mesh:session/scene/world/piece/section:*/ai-engine` | `ohmyascii:…` |
 | IndexedDB `ascii-mesh-fs` | `ohmyascii-fs` |
@@ -27,7 +28,7 @@ Unchanged: generic terms — `lib/ascii/*`, `*.ascii.json` pieces, `AsciiConfig`
 ## Pieces
 
 1. `git mv` the three renamed paths (component, studio component, skill dir); edit every file in the grep list (`ascii-mesh|ascii/mesh|AsciiMesh|ascii-studio|AsciiStudio`).
-2. Docs + README + `skills/ohmyascii-studio/SKILL.md` (frontmatter `name:` must equal the dir name — `lib/ascii/skills.test.ts` enforces it, and it checks that every repo path the skill names exists).
+2. Docs + README + `skills/ohmyascii/SKILL.md` (frontmatter `name:` must equal the dir name — `lib/ascii/skills.test.ts` enforces it, and it checks that every repo path the skill names exists).
 3. `bun run skills:sync` re-mirrors `skills/` into `.claude/skills/` + `.agents/skills/` (replaces the old `ascii-studio` mirrors).
 4. `bun run registry:build` regenerates gitignored `public/r/` as `ohmyascii.json` + `ohmyascii-studio.json`.
 5. `gh repo rename ohmyascii` and update the git remote.

@@ -57,7 +57,7 @@ For a loop of T seconds, inspect `0`, `T/4`, `T/2`, `3T/4`, `T-dt`, and `T`, whe
 For a 12-second loop at 20 fps:
 
 ```bash
-bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
+bun run tsx skills/ohmyascii/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
 bun run cli render ascii/pond.ascii.json --t 0.05 --cols 80 --rows 24 --aspect 2 --color none
 bun run cli ascii/pond.ascii.json --cols 80 --rows 24 --fps 20
 ```

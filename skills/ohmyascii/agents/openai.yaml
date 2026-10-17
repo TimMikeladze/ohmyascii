@@ -1,0 +1,4 @@
+interface:
+  display_name: "ohmyascii"
+  short_description: "Art-direct and preview beautiful ASCII animations"
+  default_prompt: "Use $ohmyascii to create a beautifully styled ASCII animation from my description, render previews, and refine it."

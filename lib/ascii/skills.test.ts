@@ -54,7 +54,7 @@ describe.each(skills)('skill %s', (name) => {
 })
 
 describe('animation pattern starters', () => {
-  const dir = 'skills/ohmyascii-studio/assets/templates'
+  const dir = 'skills/ohmyascii/assets/templates'
   const templates = readdirSync(dir).filter((name) => name.endsWith('.ascii.json'))
 
   it.each(templates)('%s validates and renders visible motion at terminal size', async (name) => {
@@ -76,7 +76,7 @@ describe('animation pattern starters', () => {
 })
 
 describe('skill preview helper', () => {
-  const script = resolve('skills/ohmyascii-studio/scripts/inspect.ts')
+  const script = resolve('skills/ohmyascii/scripts/inspect.ts')
   const run = (...args: string[]) => spawnSync(process.execPath, ['--import', 'tsx', script, ...args], { encoding: 'utf8', timeout: 30_000 })
 
   it('exports gallery pieces and rejects invalid preview dimensions', () => {

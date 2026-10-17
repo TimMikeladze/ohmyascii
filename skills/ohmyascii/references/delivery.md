@@ -2,20 +2,20 @@
 
 ## One canonical skill, two agents
 
-The committed source is `skills/ohmyascii-studio`. `bun install` or `bun run skills:sync` mirrors the complete folder into `.claude/skills/ohmyascii-studio` and `.agents/skills/ohmyascii-studio`. Edit the committed source, then sync; mirrored edits are replaced. The helper requires an ohmyascii checkout and its installed Node dependencies; copying the instructions alone does not install the renderer.
+The committed source is `skills/ohmyascii`. `bun install` or `bun run skills:sync` mirrors the complete folder into `.claude/skills/ohmyascii` and `.agents/skills/ohmyascii`. Edit the committed source, then sync; mirrored edits are replaced. The helper requires an ohmyascii checkout and its installed Node dependencies; copying the instructions alone does not install the renderer.
 
 | Environment | Invocation |
 |---|---|
 | Claude Code, this project | `/ascii a moonlit koi pond, jade and ivory, slow and intricate` |
-| Claude Code, skill installed | `/ohmyascii-studio a moonlit koi pond, jade and ivory` |
-| Codex, skill installed | `$ohmyascii-studio Create a moonlit koi pond in ascii/moon-pond.ascii.json` |
-| Either agent, natural language | “Use the ohmyascii-studio skill to make a quiet ASCII aquarium for an 80×24 terminal.” |
+| Claude Code, skill installed | `/ohmyascii a moonlit koi pond, jade and ivory` |
+| Codex, skill installed | `$ohmyascii Create a moonlit koi pond in ascii/moon-pond.ascii.json` |
+| Either agent, natural language | “Use the ohmyascii skill to make a quiet ASCII aquarium for an 80×24 terminal.” |
 
 The short `/ascii` alias is `.claude/commands/ascii.md`. It forwards the user's full request to the canonical skill. A copied alias needs the skill too. Codex uses its skill invocation/selector; do not promise that a Claude command file adds a Codex slash command. The main skill keeps portable `name`/`description` frontmatter; Codex interface metadata lives separately in `agents/openai.yaml`.
 
 Local discovery and Claude command behavior were checked against the official [Codex skill documentation](https://developers.openai.com/codex/skills/) and [Claude Code skill documentation](https://code.claude.com/docs/en/skills). If platform behavior differs, inspect the installed client's help and current official docs.
 
-For installation into another project, copy the complete `ohmyascii-studio` folder to that project's `.agents/skills/` for Codex or `.claude/skills/` for Claude Code. Copy the `/ascii` alias into `.claude/commands/` if desired. Supporting references and scripts must travel with `SKILL.md`. Use MCP against an installed renderer or point the helper at its checkout with `--repo`; do not imply that the copied folder is a standalone renderer.
+For installation into another project, copy the complete `ohmyascii` folder to that project's `.agents/skills/` for Codex or `.claude/skills/` for Claude Code. Copy the `/ascii` alias into `.claude/commands/` if desired. Supporting references and scripts must travel with `SKILL.md`. Use MCP against an installed renderer or point the helper at its checkout with `--repo`; do not imply that the copied folder is a standalone renderer.
 
 ## Choose an execution route
 

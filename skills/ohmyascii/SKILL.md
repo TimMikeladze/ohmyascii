@@ -1,5 +1,5 @@
 ---
-name: ohmyascii-studio
+name: ohmyascii
 description: Create, art-direct, refine, and preview stylized ASCII animations, creatures, logos, models, and animated 2D or 3D worlds as ohmyascii .ascii.json pieces. Use for ASCII art animation requests, terminal scenes, studio pieces, koi-pond-inspired compositions, or edits based on .frame.txt feedback.
 ---
 
@@ -51,12 +51,12 @@ Use the first available route:
 | Studio folder only | Write the piece, open it in Folder, then inspect its `.frame.txt` after roughly 2 seconds. Check the file's age. One snapshot cannot verify motion or a loop. |
 | No renderer available | Deliver complete JSON and an exact preview command; explicitly say rendering is unverified. Do not claim visual inspection. |
 
-In the checkout, run these commands from the repo root. If the skill was installed elsewhere, substitute its actual directory for `skills/ohmyascii-studio`; `--repo` identifies the renderer checkout.
+In the checkout, run these commands from the repo root. If the skill was installed elsewhere, substitute its actual directory for `skills/ohmyascii`; `--repo` identifies the renderer checkout.
 
 ```bash
-bun run tsx skills/ohmyascii-studio/scripts/inspect.ts --list
-bun run tsx skills/ohmyascii-studio/scripts/inspect.ts koi --json
-bun run tsx skills/ohmyascii-studio/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
+bun run tsx skills/ohmyascii/scripts/inspect.ts --list
+bun run tsx skills/ohmyascii/scripts/inspect.ts koi --json
+bun run tsx skills/ohmyascii/scripts/inspect.ts ascii/pond.ascii.json --cols 80 --rows 24 --aspect 2 --times 0,3,6,9,11.95,12 --out /tmp/pond-preview
 ```
 
 Inspect text for silhouette and density and the colored contact sheet for hierarchy and materials. Compare ordinary motion with the seam; fix the largest visible defect, re-read the on-disk piece, edit, and render again. Parser success is insufficient: check normalization changes, skipped assets, crop, overlapping actors, broken anatomy, and target-size readability. The helper writes previews only when `--out` is supplied and never rewrites the piece.
